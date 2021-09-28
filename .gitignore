@@ -42,3 +42,15 @@ flycheck_init.el
 /semanticdb
 /transient
 **/__pycache__*
+/eln-cache/
+/org-clock-save.el
+/straight/build/
+/straight/build-cache.el
+/straight/modified/
+/straight/repos/
+/.org-id-locations
+/.extension/
+/.edbi-ds-history
+/.dap-breakpoints
+/var/
+/elpy/

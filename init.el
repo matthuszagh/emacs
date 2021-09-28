@@ -4,169 +4,267 @@
 
 ;;; Code:
 
-;; We use a straight-maintained mirror, which fixes an issue that makes tex-sites.el unavailable to
-;; AUCTeX.
-(setq straight-recipes-gnu-elpa-use-mirror t)
+;; all configuration files are placed in config
+(setq config-dir (concat user-emacs-directory "config"))
+(setq load-path (append load-path `(,config-dir)))
 
-;; Retreive straight if we don't have it.
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+(defun mh:log-init (level message)
+  "Log LEVEL and MESSAGE to *init*.
+LEVEL is the severity of the message, such as WARNING or ERROR."
+  (unless (or (string-equal level "ERROR")
+              (string-equal level "WARNING"))
+    (error "Invalid LEVEL argument specified in 'mh:log-init"))
+  (if (string-equal level "ERROR")
+      (error message)
+    (with-current-buffer (get-buffer-create "*init*")
+      (insert (concat level ": " message "\n")))))
 
-;; add a new profile pointing to the emacs source tree
-(setq mh-emacs-directory "~/src/nixos/users/profiles/emacs/emacs")
 
-;; Navigate straight to source directory for lockfile. This is under
-;; version control and writable, unlike the read-only copy (nix store
-;; symlink) under ~/.config/emacs.
-(setq straight-profiles `((nil . ,(concat mh-emacs-directory "/straight/versions/default.el"))))
+(require 'c-straight)
 
-(straight-use-package 'use-package)
-
-(require 'use-package)
-
-;; Prefer `.el' files over outdated `.elc' files. Use this with `auto-compile' to automatically
-;; byte-compile outdated files.
-(straight-use-package 'auto-compile)
-(setq load-prefer-newer t)
-(use-package auto-compile
-  :config
-  (auto-compile-on-load-mode)
-  (auto-compile-on-save-mode))
-
-;; TODO move this to :presetup when that's working and nixpkgs is setup.
-;; (straight-use-package
-;;  '(layers :type git :host github :repo "matthuszagh/layers"))
-(straight-use-package 'ht)
+;; TODO emacs overlay adds org to the load path for some reason. Remove it manually.
 (straight-use-package 'dash)
-(straight-use-package '(layers :local-repo "layers"))
+(require 'dash)
+(setq load-path
+      (-remove (lambda (path)
+                 (string-equal (substring path -3 nil) "org"))
+               load-path))
 
-(use-package layers
-  :init
-  (if (featurep 'straight)
-      (progn
-        (straight-use-package 'ht)
-        (straight-use-package 'dash)))
-  :config
-  (declare-layers '(base
-                    keybinding-management
-                    straight
-                    modal
-                    multiple-cursors
-                    no-littering
-                    mail
-                    recoll
-                    ledger
-                    pinentry
-                    image
-                    time
-                    calendar
+(require 'c-use-package) ; TODO remove
+(require 'c-auto-compile)
+(require 'c-base)
+(require 'c-no-littering)
 
-                    ;; appearance
-                    ;; sourcerer-theme
-                    naysayer-theme
-                    ;; TODO spaceline breaks emacs knowing the correct window. See `frame-selected-window' and `powerline-selected-window'.
-                    ;; spaceline
-                    rainbow-delimiters
-                    ;; pairs
-                    async
+(require 'c-autoinsert)
+(require 'c-aggressive-indent)
+(require 'c-all-the-icons)
+(require 'c-asy-mode)
+(require 'c-auctex)
+(require 'c-auctex-latexmk)
+(require 'c-banner-comment)
+(require 'c-bash-completion)
+(require 'c-battery)
+(require 'c-bison-mode)
+(require 'c-blacken)
+(require 'c-bnf-mode)
+(require 'c-calc)
+(require 'c-calendar)
+(require 'c-cc-mode)
+(require 'c-clang-format)
+(require 'c-cmake-font-lock)
+(require 'c-cmake-mode)
+(require 'c-comint)
+(require 'c-compile)
+(require 'c-cython-mode)
+(require 'c-dap-mode)
+(require 'c-debbugs)
+(require 'c-define-word)
+(require 'c-diff-mode)
+(require 'c-direnv)
+(require 'c-djvu)
+(require 'c-dumb-jump)
+(require 'c-edbi)
+(require 'c-edebug)
+(require 'c-ein)
+(require 'c-elec-pair)
+(require 'c-elfeed)
+(require 'c-elisp-mode)
+;; TODO broken
+;; (require 'c-elsa)
+(require 'c-emr)
+(require 'c-erc)
+(require 'c-eshell)
+(require 'c-eww)
+(require 'c-fish-completion)
+(require 'c-framemove)
+(require 'c-gdb-mi)
+(require 'c-git-gutter)
+(require 'c-git-timemachine)
+(require 'c-gnus)
+(require 'c-haskell-mode)
+(require 'c-helpful)
+(require 'c-hexl)
+(require 'c-hydra)
+(require 'c-image-mode)
+(require 'c-info-colors)
+(require 'c-info)
+(require 'c-json-mode)
+(require 'c-langtool)
 
-                    ;; programming
-                    programming
-                    vcs
-                    completions
-                    prescient
-                    shell
-                    assembly
-                    nix
-                    c
-                    lsp
-                    ;; ccls
-                    cmake
-                    sysadmin
-                    octave
-                    clisp
-                    elisp
-                    lisp
-                    flycheck
-                    refactor
-                    dumb-jump
-                    calc
-                    verilog
-                    python
-                    sx
-                    elfeed
-                    make
-                    debugging
-                    sage
-                    tex
-                    sql
-                    scad
-                    hexl
-                    rust
-                    haskell
-                    rmsbolt
-                    asy
-                    snippet
-                    dap
-                    spice
-                    hydra
-                    ;; TODO timeout errors
-                    ;; perspective
-                    json
-                    yaml
-                    web-dev
-                    diff
-                    jupyter
-                    grammar
+;; lsp
+(require 'c-lsp-mode)
+(require 'c-lsp-ui)
+(require 'c-lsp-pyright)
 
-                    ;; formatting
-                    indenting
-                    formatting
+;; magit
+(require 'c-transient)
+(require 'c-magit)
+(require 'c-forge)
 
-                    documentation
-                    undoing
-                    buffers
-                    line
-                    librarian
-                    windows
-                    files
-                    helm
-                    help
-                    org
-                    org-roam
-                    org-noter
-                    org-ref
-                    markdown
-                    writing
-                    exwm
-                    pdf
-                    epub
-                    internet
-                    irc
-                    icon-font))
-  (declare-global-depends '(base
-                            straight
-                            keybinding-management
-                            no-littering))
+(require 'c-make-mode)
+(require 'c-man)
+(require 'c-markdown-mode)
+(require 'c-mml)
+(require 'c-multiple-cursors)
+(require 'c-nix-mode)
+(require 'c-nixpkgs-fmt)
+(require 'c-nix-update)
+(require 'c-notmuch)
+(require 'c-nov)
+(require 'c-octave)
 
-  (defun mh/load-all-elisp-in-dir (dir)
-    (let ((libraries-loaded (mapcar #'file-name-sans-extension
-                                    (delq nil (mapcar #'car load-history)))))
-      (dolist (file (directory-files-recursively dir ".+-layer\\.elc?$"))
-        (let ((library (file-name-sans-extension file)))
-          (unless (member library libraries-loaded)
-            (load library nil t)
-            (push library libraries-loaded))))))
-  (mh/load-all-elisp-in-dir (concat user-emacs-directory "layers")))
+;; org
+(require 'c-org)
+(require 'c-ol)
+(require 'c-ox)
+(require 'c-org-ml)
+(require 'c-org-edna)
+(require 'c-org-fragtog)
+(require 'c-org-noter)
+(require 'c-org-ref)
+(require 'c-org-roam)
+(require 'c-org-roam-bibtex)
+(require 'c-org-api)
+(require 'c-org-texnum)
+(require 'c-ob)
+(require 'c-ob-sagemath)
+(require 'c-ob-spice)
+(require 'c-org-eldoc)
+(require 'c-ob-async)
+
+;; helm
+(require 'c-helm)
+(require 'c-helm-bibtex)
+(require 'c-helm-descbinds)
+(require 'c-helm-eww)
+(require 'c-helm-grep)
+(require 'c-helm-librarian)
+(require 'c-helm-ls-git)
+(require 'c-helm-notmuch)
+(require 'c-helm-org)
+;; TODO broken
+;; (require 'c-helm-projectile)
+(require 'c-helm-recoll)
+(require 'c-helm-regexp)
+(require 'c-helm-systemd)
+(require 'c-helm-xref)
+
+(require 'c-ledger-mode)
+(require 'c-paren)
+(require 'c-pdf-tools)
+;; (require 'c-perspective)
+(require 'c-pinentry)
+(require 'c-proced)
+(require 'c-prog-mode)
+(require 'c-projectile)
+(require 'c-pulseaudio-control)
+(require 'c-python-docstring)
+(require 'c-python)
+(require 'c-rainbow-delimiters)
+(require 'c-realgud)
+(require 'c-rmsbolt)
+(require 'c-rustic)
+(require 'c-sage-shell-mode)
+(require 'c-scad-mode)
+(require 'c-shell)
+(require 'c-shr)
+(require 'c-simple)
+(require 'c-skewer-mode)
+(require 'c-slime)
+(require 'c-spice-mode)
+(require 'c-sql)
+(require 'c-super-save)
+(require 'c-sx)
+(require 'c-term)
+(require 'c-time)
+(require 'c-undo-tree)
+(require 'c-verilog-mode)
+(require 'c-vterm)
+(require 'c-vterm-toggle)
+(require 'c-wgrep)
+(require 'c-which-key)
+(require 'c-window)
+(require 'c-writegood-mode)
+(require 'c-x86-lookup)
+(require 'c-yaml-mode)
+(require 'c-async)
+
+;; completions
+(require 'c-company)
+(require 'c-slime-company)
+
+;; syntax checking
+(require 'c-flycheck)
+(require 'c-flycheck-cython)
+(require 'c-flycheck-elsa)
+(require 'c-flycheck-ledger)
+
+;; snippets
+(require 'c-yasnippet)
+(require 'c-auto-activating-snippets)
+(require 'c-latex-auto-activating-snippets)
+
+(require 'c-elpy)
+
+;; themes
+(require 'c-naysayer-theme)
+(require 'c-spaceline)
+;; keybindings
+(require 'c-evil)
+(require 'c-evil-collection)
+(require 'c-evil-ledger)
+(require 'c-evil-numbers)
+(require 'c-evil-surround)
+(require 'c-lispyville)
+(require 'c-general)
+;; exwm
+(require 'c-exwm)
+
+;; TODO find another location for these
+(defun mh/nix-rebuild ()
+  ""
+  (interactive)
+  (command-execute
+   (async-shell-command "cd ~/src/nixos/ && make" "*nixos-rebuild*")))
+
+(defun mh/nix-rebuild-show-trace ()
+  ""
+  (interactive)
+  (command-execute
+   (async-shell-command "cd ~/src/nixos/ && make trace" "*nixos-rebuild*")))
+
+(defun mh/start-vpn ()
+  (interactive)
+  (start-process-shell-command
+   "pia" nil "sudo systemctl start openvpn-us-east"))
+
+(defun mh/low-power-mode ()
+  (interactive)
+  (start-process-shell-command
+   "low-power" nil "cd ~/src/tools && ./low-power.sh"))
+
+(defun mh/high-power-mode ()
+  (interactive)
+  (start-process-shell-command
+   "high-power" nil "cd ~/src/tools && ./high-power.sh"))
+
+;; Increase undo limits
+(setq undo-limit 16000000)
+(setq undo-strong-limit 24000000)
+
+(defun mh/switch-to-minibuffer ()
+  "Switch to minibuffer window."
+  (interactive)
+  (if (active-minibuffer-window)
+      (select-window (active-minibuffer-window))
+    (error "Minibuffer is not active")))
+;; end TODO
+
+;; log a message in *init* for all configuration files not loaded
+(let ((config-files (directory-files config-dir)))
+  (dolist (file config-files)
+    (let ((feature-string (file-name-base file)))
+      (unless (featurep (intern feature-string))
+        (mh:log-init "WARNING" (concat feature-string " not loaded"))))))
 
 ;;; init.el ends here

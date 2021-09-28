@@ -1,0 +1,70 @@
+- all configurations placed immediately under the config directory
+- one file per package, used to load and configure package (including built-in packages)
+- config files should be named ~c-package.el~, where package is the package name
+- I think there probably won't be any configurations that are package-agnostic. If there are I'll need some way of dealing with this.
+- when a configuration relates to more than one package it should adhere to the following rules:
+  - keybindings for a package should go in the configuration file for the keybinding package (e.g., general definition for org-roam should go in the general configuration). Whenever possible, it should be placed under a ~(if (featurep))~ instead of a ~with-eval-after-load~. ~with-eval-after-load~ should not be used to mask load-order mistakes (though it may legitimately useful in some cases).
+  - theme configurations should go in the theme package
+- all package configuration files should be loaded in init.el (not by another configuration file). This, along with the strict per-package configuration file, should make it easy to fix load order issues.
+- keybinding and theme configurations, as a general rule, should be loaded last. snippets should also be loaded near the end
+- straight should be guarded as follows:
+
+#+begin_src elisp :eval no
+(if (featurep 'straight)
+    (straight-use-package 'org-ml))
+#+end_src
+
+This will make it easy to switch between using (and not using) straight, which could be useful.
+
+- don't use use-package because
+  - it doesn't integrate well with Edebug
+  - it makes it difficult to perform some reconfigurations (e.g., I don't think there's a standalone way to eval hooks)
+  - the organizational benefits are already addressed by the one file per package scheme
+  - dealing with things like load order myself force me to understand them
+- have a tool tell you which configuration files under config were not loaded during initialization
+
+If a package provides configuration that only makes sense when another package is loaded (and may trigger a runtime error), we should add an ~after-init-hook~ that triggers an error if the package is never loaded. For example,
+
+#+begin_src elisp :eval no
+(add-hook 'after-init-hook
+          (lambda ()
+            (unless (featurep 'org)
+              (mh:log-init "ERROR" "'helm-org was configured but 'org was never loaded"))))
+#+end_src
+
+Don't attempt to provide a configuration for every feature provided by every package. This is too granular, will make it difficult to find what you're looking for and may cause breakages when packages undergo internal reorganization. I think there are cases where this can be useful. For instance, org-babel, which has a lot of configuration and is easy enough to remember. But helm for instance has over 60 files...
+
+* structure
+~init.el~ performs basic setup and then loads configuration files from the ~config~ subdirectory. Configurations are organized thematically to make related configurations easier to find. All directories (recursively) within the ~config~ directory will be added to the load-path. All configuration files are named ~c-XXX.el~, where ~XXX~ is some string. Each package has its own configuration file named directly after the package. This also true for built-in packages since (1) it's often difficult to remember whether a package is shipped with Emacs or not, and (2) because the relevant point here is that configurations for each package are stored in the same location and thus easy to find and associate. I.e., the configurations for org are placed in ~c-org.el~. Additionally, each subdirectory of ~config~ contains a file named ~c-XXX-base.el~. These files load the desired configuration files within their subdirectories and perform package agnostic configurations.
+
+** configurations that apply to more than one package
+*** keybindings
+Keybinding configurations should be placed in the configuration file for the package that sets the keybindings. This should be guarded such that it's only loaded if the relevant other package has been provided. If that is not the case, log a message to the init log. For example (in ~config-general.el~):
+
+#+begin_src emacs-lisp :eval no
+(if (featurep 'config-helm-descbinds)
+    (general-define-key
+     :keymaps 'mh/prefix-help-map
+     "b" 'helm-descbinds)
+  (mh:log-init "Failed to define keybindings for helm-descbinds, which was not loaded."))
+#+end_src
+
+This is preferred over ~with-eval-after-load~ since we should be loading keybindings after other packages.
+
+*** theme configurations
+Place theme-related configuration settings in the theme package configuration file.
+
+* rules
+** avoid use-package
+The organizational benefits are largely provided by the per-package configuration file. Additionally, ~use-package~ has some downsides, such as incompatibility with Edebug.
+
+** load order
+Prefer errors for signaling invalid load order, than handling the error with ~with-eval-after-load~. While ~with-eval-after-load~ has its place, it's typically useful to know when you're loading things in the wrong order.
+
+For example,
+
+#+begin_src elisp :eval no
+(unless (and (featurep 'slime)
+             (featurep 'company))
+  (error "Attempted to load 'slime-company' before 'slime' and 'company': reorganize init file"))
+#+end_src
