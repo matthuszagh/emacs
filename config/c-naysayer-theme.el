@@ -42,7 +42,8 @@
                                      ("FILE" . (:foreground "orange"
                                                 :weight bold))
                                      ("DONE" . (:foreground "PaleGreen"
-                                                :weight bold)))))
+                                                :weight bold))))
+      (setq org-fontify-done-headline nil))
   (mh:log-init "ERROR" "attempted to load 'naysayer-theme customizations for 'org without loading 'org"))
 
 (if (featurep 'org-ref)
