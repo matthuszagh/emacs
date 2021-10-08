@@ -4,6 +4,9 @@
 
 ;;; Code:
 
+(unless (featurep 'pdf-tools)
+  (mh:log-init "ERROR" "attempted to load 'org-ref before dependency 'pdf-tools"))
+
 (if (featurep 'straight)
     (straight-use-package 'org-ref))
 

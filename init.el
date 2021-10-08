@@ -112,6 +112,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-notmuch)
 (require 'c-nov)
 (require 'c-octave)
+(require 'c-pdf-tools)
 
 ;; org
 (require 'c-org)
@@ -151,7 +152,6 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 
 (require 'c-ledger-mode)
 (require 'c-paren)
-(require 'c-pdf-tools)
 ;; (require 'c-perspective)
 (require 'c-pinentry)
 (require 'c-proced)
