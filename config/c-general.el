@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;; TODO keybindings should be grouped on prefix etc instead of
-;; package. Currently, they're too scattered. This will make it much
+;; package.  Currently, they're too scattered.  This will make it much
 ;; easier to see what's in a map.
 
 ;;; Code:
