@@ -8,7 +8,7 @@
              (featurep 'org-texnum))
   (mh:log-init "ERROR" "attempted to load 'c-ob before 'org-api and 'org-texnum"))
 
-(org-babel-lob-ingest (concat user-emacs-directory "lob.org"))
+(org-babel-lob-ingest (concat user-emacs-directory "config/lob.org"))
 
 (require 's)
 
