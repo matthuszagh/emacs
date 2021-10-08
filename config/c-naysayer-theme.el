@@ -15,6 +15,12 @@
 (setq mh-background-color (face-background 'default))
 (set-face-attribute 'highlight nil :background "dark slate blue")
 (set-face-attribute 'region nil :background "dark slate blue")
+;; 'fixed-pitch (used, among other things, for org-block) defaults to
+;; the "Monospace" family for the selected font.  While this still
+;; uses "Source Code Pro", it isn't as nice as the "Regular" font
+;; family (which is monospace anyway). We therefore unspecify this to
+;; revert to "Regular".
+(set-face-attribute 'fixed-pitch nil :family "unspecified")
 
 (if (featurep 'org)
     (progn
