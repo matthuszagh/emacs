@@ -140,6 +140,7 @@
  ("paradox" . "339fe3518d1d102b2295670340e75caf4f01a29a")
  ("paredit" . "8330a41e8188fe18d3fa805bb9aa529f015318e8")
  ("parsebib" . "3497b6068d78ae15ba1eaf94e4315d18e9ae6b00")
+ ("pdf-tools" . "f68899cf0646255ca763f1144f7a9520e7cd46db")
  ("pfuture" . "d7926de3ba0105a36cfd00811fd6278aea903eef")
  ("pkg-info" . "76ba7415480687d05a4353b27fea2ae02b8d9d61")
  ("polymode" . "3284ff10017d280ba82f27dc20fe5223b0df709c")
