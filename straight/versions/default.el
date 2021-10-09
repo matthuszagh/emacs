@@ -174,7 +174,7 @@
  ("trinary-logic" . "886232c6d7e92a8e9fe573eef46754ebe321f90d")
  ("undo-tree" . "e326c6135e62f5fe8536528d3acd5e798f847407")
  ("use-package" . "7d925367ef0857d513d62eab4cb57b7436b9ffe9")
- ("vterm-toggle" . "2258eb19e8bde75f79505c4306f3476bcedce56c")
+ ("vterm-toggle" . "ea0bfeaa200d9ed02b51bbbd83222657b02637e7")
  ("with-editor" . "5519b6a67ecd66865b4fdd5447425eee900c54f4")
  ("writegood-mode" . "b71757ec337e226909fb0422f0224e31acc71733")
  ("x86-lookup" . "609b2ba70dc5a246ac9b4b5f89eb5ef4331519bf")
