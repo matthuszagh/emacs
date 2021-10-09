@@ -4,10 +4,8 @@
 
 ;;; Code:
 
-;; TODO use upstream when PR accepted
 (if (featurep 'straight)
-    (straight-use-package '(org-roam :fork (:host github
-                                            :repo "matthuszagh/org-roam"))))
+    (straight-use-package 'org-roam))
 
 ;; this must be set before org-roam is loaded
 (setq org-roam-v2-ack t)
