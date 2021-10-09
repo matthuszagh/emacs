@@ -16,7 +16,7 @@
   ;; often larger than the default threshold.
   (setq large-file-warning-threshold nil)
   :config
-  (pdf-tools-install)
+  (pdf-tools-install t)
   ;; fixes an issue in emacs 27 where pdf is blurry and too large otherwise.
   (setq image-scaling-factor 1)
   ;; do not limit max page/image size
