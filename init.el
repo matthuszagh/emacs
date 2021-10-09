@@ -173,7 +173,6 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-slime)
 (require 'c-spice-mode)
 (require 'c-sql)
-(require 'c-super-save)
 (require 'c-sx)
 (require 'c-term)
 (require 'c-time)

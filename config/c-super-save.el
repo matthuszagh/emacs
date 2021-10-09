@@ -1,7 +1,9 @@
 ;;; c-super-save.el ---  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-
+;;
+;; super-save is a package for saving buffers when they lose focus.
+;;
 ;;; Code:
 
 (if (featurep 'straight)
