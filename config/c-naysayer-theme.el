@@ -31,6 +31,11 @@
       (set-face-foreground 'org-code (face-foreground 'default))
       (set-face-foreground 'org-link "#86aed5")
 
+      (set-face-foreground 'mh-org-roam-node-outline-prefix-face "grey40")
+      (set-face-foreground 'mh-org-roam-node-outline-suffix-face (face-foreground 'default))
+      (set-face-foreground 'mh-org-roam-node-tags-face "grey40")
+      (set-face-attribute 'mh-org-roam-node-tags-face nil :slant 'italic)
+
       ;; org-level-n are inherited from outline-n.
       (set-face-foreground 'outline-1 "white")
       (set-face-foreground 'outline-2 "#44b340")

@@ -4,8 +4,10 @@
 
 ;;; Code:
 
+;; TODO use upstream when PR accepted
 (if (featurep 'straight)
-    (straight-use-package 'org-roam))
+    (straight-use-package '(org-roam :fork (:host github
+                                            :repo "matthuszagh/org-roam"))))
 
 ;; this must be set before org-roam is loaded
 (setq org-roam-v2-ack t)
@@ -64,10 +66,20 @@
                              "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
          :unnarrowed t)))
 
+(defface mh-org-roam-node-outline-prefix-face '((t nil))
+  "Face for the outline prefix when displaying a node.")
+
+(defface mh-org-roam-node-outline-suffix-face '((t nil))
+  "Face for the outline suffix when displaying a node.")
+
+(defface mh-org-roam-node-tags-face '((t nil))
+  "Face for the tags when displaying a node.")
+
 ;; TODO also look at `org-format-outline-path'. Probably not
 ;; exactly what I want, but it does something similar.
 (setq mh//org-roam-helm-tags-width 25)
 (cl-defmethod org-roam-node-outline ((node org-roam-node))
+  "Outline string to display for an org-roam node."
   ;; `outline-display' is a list of each headline path in the outline
   ;; we display. We initialize it to the full path and then remove
   ;; elements as needed.
@@ -88,11 +100,11 @@
                                          (= level 0))]
                             file))))
           (setq outline-display (append title outline-display))))
-    (setq outline-display (-update-at (- (length outline-display) 1)
-                                      (lambda (head)
-                                        (org-add-props head nil 'face
-                                                       (nth (% 0 org-n-level-faces) org-level-faces)))
-                                      outline-display))
+    ;; stylize parts of the outline according to custom faces
+    (setq outline-display
+          (--map-last t (org-add-props it nil 'face 'mh-org-roam-node-outline-suffix-face)
+	              (--map (org-add-props it nil 'face 'mh-org-roam-node-outline-prefix-face)
+                             outline-display)))
     ;; `(length outline-display)' computes the string length of all
     ;; separators. 2 computes the maximum difference between the
     ;; string length of '...' and a headline string, in case on
@@ -127,12 +139,27 @@
           (setq index (+ 1 index))))
       outline-string)))
 
+(cl-defmethod org-roam-node-tags-stylized ((node org-roam-node))
+  "Tags string to display for an org-roam node."
+  ;; `outline-display' is a list of each headline path in the outline
+  ;; we display. We initialize it to the full path and then remove
+  ;; elements as needed.
+  (org-add-props (mapconcat
+                  (lambda (v)
+                    (concat (or (cdr (assoc "tags" org-roam-node-template-prefixes))
+                                "")
+                            v))
+                  (org-roam-node-tags node) " ")
+      nil 'face 'mh-org-roam-node-tags-face))
+
 (setq org-roam-node-display-template
-      (concat "${outline:"
-              (number-to-string (- (window-width) mh//org-roam-helm-tags-width 1))
-              "} ${tags:"
-              (number-to-string mh//org-roam-helm-tags-width)
-              "}"))
+      (lambda ()
+        (let ((tags-width 25))
+          (concat "${outline:"
+                  (number-to-string (- (window-width) tags-width 1))
+                  "} ${tags-stylized:"
+                  (number-to-string tags-width)
+                  "}"))))
 
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here
