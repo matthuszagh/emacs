@@ -41,7 +41,11 @@
       (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
 
   (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
-  (setq org-enforce-todo-dependencies t)
+
+  ;; Don't block parent headings from being marked 'DONE' when child
+  ;; headings are still in a 'TODO' state. This is `nil' by default,
+  ;; but it doesn't hurt to be explicit.
+  (setq org-enforce-todo-dependencies nil)
 
   ;; always use :noweb in org babel source blocks.
   (setq org-babel-default-header-args
