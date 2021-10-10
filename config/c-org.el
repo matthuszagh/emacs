@@ -4,6 +4,8 @@
 
 ;;; Code:
 
+;; TODO consider setting org-capture-bookmark to nil
+
 (if (featurep 'straight)
     (straight-use-package '(org-plus-contrib
                             :host github
@@ -15,224 +17,221 @@
 
 (require 'org)
 
-(use-package org
-  :demand t
-  :hook
-  ((org-babel-after-execute . org-display-inline-images))
-  :config
-  (use-package org-element)
+(add-hook 'org-babel-after-execute-hook
+          #'org-display-inline-images)
 
-  (setq org-startup-with-latex-preview t)
-  (setq org-startup-with-inline-images t)
-  (setq org-startup-folded t)
+(require 'org-element)
+(setq org-startup-with-latex-preview t)
+(setq org-startup-with-inline-images t)
+(setq org-startup-folded t)
 
-  ;; show invisible text when editing it
-  (setq org-catch-invisible-edits 'show)
+;; show invisible text when editing it
+(setq org-catch-invisible-edits 'show)
 
-  ;; place archives in the current file under the top-level 'archive' headline
-  (setq org-archive-location "::* archive")
+;; place archives in the current file under the top-level 'archive' headline
+(setq org-archive-location "::* archive")
 
-  ;; hide emphasis markers
-  (setq org-hide-emphasis-markers t)
+;; hide emphasis markers
+(setq org-hide-emphasis-markers t)
 
-  (defun org-summary-todo (n-done n-not-done)
-    "Switch entry to DONE when all subentries are done, to TODO otherwise."
-    (let (org-log-done org-log-states)   ; turn off logging
-      (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+(defun org-summary-todo (n-done n-not-done)
+  "Switch entry to DONE when all subentries are done, to TODO otherwise."
+  (let (org-log-done org-log-states)   ; turn off logging
+    (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
 
-  (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
+(add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
 
-  ;; Don't block parent headings from being marked 'DONE' when child
-  ;; headings are still in a 'TODO' state. This is `nil' by default,
-  ;; but it doesn't hurt to be explicit.
-  (setq org-enforce-todo-dependencies nil)
+;; Don't block parent headings from being marked 'DONE' when child
+;; headings are still in a 'TODO' state. This is `nil' by default,
+;; but it doesn't hurt to be explicit.
+(setq org-enforce-todo-dependencies nil)
 
-  ;; always use :noweb in org babel source blocks.
-  (setq org-babel-default-header-args
-        (cons '(:noweb . "yes")
-              (assq-delete-all :noweb org-babel-default-header-args)))
+;; always use :noweb in org babel source blocks.
+(setq org-babel-default-header-args
+      (cons '(:noweb . "yes")
+            (assq-delete-all :noweb org-babel-default-header-args)))
 
 
-  ;; allow the use of :hidden to hide certain source blocks when a
-  ;; buffer is opened. All others will be visible by default.
-  (defun mh//individual-visibility-source-blocks ()
-    "Fold some blocks in the current buffer."
-    (interactive)
-    (org-show-block-all)
-    (org-block-map
-     (lambda ()
-       (let ((case-fold-search t))
-         (when (and
-                (save-excursion
-                  (beginning-of-line 1)
-                  (looking-at org-block-regexp))
-                (cl-assoc
-                 ':hidden
-                 (cl-third
-                  (org-babel-get-src-block-info))))
-           (org-hide-block-toggle))))))
-  (add-hook 'org-mode-hook (function mh//individual-visibility-source-blocks))
+;; allow the use of :hidden to hide certain source blocks when a
+;; buffer is opened. All others will be visible by default.
+(defun mh//individual-visibility-source-blocks ()
+  "Fold some blocks in the current buffer."
+  (interactive)
+  (org-show-block-all)
+  (org-block-map
+   (lambda ()
+     (let ((case-fold-search t))
+       (when (and
+              (save-excursion
+                (beginning-of-line 1)
+                (looking-at org-block-regexp))
+              (cl-assoc
+               ':hidden
+               (cl-third
+                (org-babel-get-src-block-info))))
+         (org-hide-block-toggle))))))
+(add-hook 'org-mode-hook (function mh//individual-visibility-source-blocks))
 
-  ;; use habits
-  (add-to-list 'org-modules 'org-habit)
-  (setq org-habit-show-habits nil)
+;; use habits
+(add-to-list 'org-modules 'org-habit)
+(setq org-habit-show-habits nil)
 
-  ;; property inheritance
-  (setq org-use-property-inheritance t)
+;; property inheritance
+(setq org-use-property-inheritance t)
 
-  ;; agenda view
-  (setq org-agenda-custom-commands
-        '(("c" "Custom agenda view"
-           ((tags-todo "hardware|electronics|mechanical_engineering"
-                       ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
-                        (org-agenda-overriding-header "Hardware")
-                        (org-agenda-prefix-format "  ")
-                        (org-agenda-hide-tags-regexp ".*")))
-            (tags-todo "software"
-                       ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
-                        (org-agenda-overriding-header "Software")))
-            (tags-todo "nix"
-                       ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
-                        (org-agenda-overriding-header "Nix")))
-            (tags-todo "emacs"
-                       ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
-                        (org-agenda-overriding-header "Emacs")))
-            (tags-todo "read"
-                       ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
-                        (org-agenda-overriding-header "Prioritized Reading Material")))))))
+;; agenda view
+(setq org-agenda-custom-commands
+      '(("c" "Custom agenda view"
+         ((tags-todo "hardware|electronics|mechanical_engineering"
+                     ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
+                      (org-agenda-overriding-header "Hardware")
+                      (org-agenda-prefix-format "  ")
+                      (org-agenda-hide-tags-regexp ".*")))
+          (tags-todo "software"
+                     ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
+                      (org-agenda-overriding-header "Software")))
+          (tags-todo "nix"
+                     ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
+                      (org-agenda-overriding-header "Nix")))
+          (tags-todo "emacs"
+                     ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
+                      (org-agenda-overriding-header "Emacs")))
+          (tags-todo "read"
+                     ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("HOLD")))
+                      (org-agenda-overriding-header "Prioritized Reading Material")))))))
 
-  ;; todo statistics should display all recursive children
-  (setq org-hierarchical-todo-statistics nil)
-  ;; ;; set default image background color
-  ;; (defun org-display-inline-images--with-color-theme-background-color (args)
-  ;;   "Specify background color of Org-mode inline image through modify `ARGS'."
-  ;;   (let* ((file (car args))
-  ;;          (type (cadr args))
-  ;;          (data-p (caddr args))
-  ;;          (props (cdddr args)))
-  ;;     ;; get this return result style from `create-image'
-  ;;     (append (list file type data-p)
-  ;;             (list :background "white")
-  ;;             props)))
+;; todo statistics should display all recursive children
+(setq org-hierarchical-todo-statistics nil)
+;; ;; set default image background color
+;; (defun org-display-inline-images--with-color-theme-background-color (args)
+;;   "Specify background color of Org-mode inline image through modify `ARGS'."
+;;   (let* ((file (car args))
+;;          (type (cadr args))
+;;          (data-p (caddr args))
+;;          (props (cdddr args)))
+;;     ;; get this return result style from `create-image'
+;;     (append (list file type data-p)
+;;             (list :background "white")
+;;             props)))
 
-  ;; (advice-add 'create-image :filter-args
-  ;;             #'org-display-inline-images--with-color-theme-background-color)
-  ;; (advice-remove 'create-image #'org-display-inline-images--with-color-theme-background-color)
+;; (advice-add 'create-image :filter-args
+;;             #'org-display-inline-images--with-color-theme-background-color)
+;; (advice-remove 'create-image #'org-display-inline-images--with-color-theme-background-color)
 
-  ;; look for a specified attribute width, otherwise fallback to
-  ;; actual image width
-  (setq org-image-actual-width nil)
+;; look for a specified attribute width, otherwise fallback to
+;; actual image width
+(setq org-image-actual-width nil)
 
-  ;; fontify when not in polymode
-  (setq org-src-fontify-natively t)
+;; fontify when not in polymode
+(setq org-src-fontify-natively t)
 
-  ;; preserve src block indentation
-  ;; this works better with aggressive-indent-mode
-  (setq org-edit-src-content-indentation 0)
-  (setq org-src-preserve-indentation t)
+;; preserve src block indentation
+;; this works better with aggressive-indent-mode
+(setq org-edit-src-content-indentation 0)
+(setq org-src-preserve-indentation t)
 
-  ;; Don't pretty display things like pi. This makes it harder to
-  ;; edit latex code.
-  (setq org-pretty-entities nil)
-  ;; When displaying pretty entities, don't display
-  ;; super/subscripts.
-  (setq org-pretty-entities-include-sub-superscripts nil)
+;; Don't pretty display things like pi. This makes it harder to
+;; edit latex code.
+(setq org-pretty-entities nil)
+;; When displaying pretty entities, don't display
+;; super/subscripts.
+(setq org-pretty-entities-include-sub-superscripts nil)
 
-  ;; don't trigger error for broken links during export
-  (setq org-export-with-broken-links t)
+;; don't trigger error for broken links during export
+(setq org-export-with-broken-links t)
 
-  ;; permit still typing emphasis characters as normal characters
-  ;; see https://emacs.stackexchange.com/a/16746/20317
-  (defun mh/org-entity-get-name (char)
-    "Return the entity name for CHAR. For example, return \"ast\" for *."
-    (let ((ll (append org-entities-user
-                      org-entities))
-          e name utf8)
-      (catch 'break
-        (while ll
-          (setq e (pop ll))
-          (when (not (stringp e))
-            (setq utf8 (nth 6 e))
-            (when (string= char utf8)
-              (setq name (car e))
-              (throw 'break name)))))))
+;; permit still typing emphasis characters as normal characters
+;; see https://emacs.stackexchange.com/a/16746/20317
+(defun mh/org-entity-get-name (char)
+  "Return the entity name for CHAR. For example, return \"ast\" for *."
+  (let ((ll (append org-entities-user
+                    org-entities))
+        e name utf8)
+    (catch 'break
+      (while ll
+        (setq e (pop ll))
+        (when (not (stringp e))
+          (setq utf8 (nth 6 e))
+          (when (string= char utf8)
+            (setq name (car e))
+            (throw 'break name)))))))
 
-  (defun mh/org-insert-org-entity-maybe (&rest args)
-    "When the universal prefix C-u is used before entering any character,
+(defun mh/org-insert-org-entity-maybe (&rest args)
+  "When the universal prefix C-u is used before entering any character,
   insert the character's `org-entity' name if available.
 
   If C-u prefix is not used and if `org-entity' name is not available, the
   returned value `entity-name' will be nil."
-    ;; It would be fine to use just (this-command-keys) instead of
-    ;; (substring (this-command-keys) -1) below in emacs 25+.
-    ;; But if the user pressed "C-u *", then
-    ;;  - in emacs 24.5, (this-command-keys) would return "^U*", and
-    ;;  - in emacs 25.x, (this-command-keys) would return "*".
-    ;; But in both versions, (substring (this-command-keys) -1) will return
-    ;; "*", which is what we want.
-    ;; http://thread.gmane.org/gmane.emacs.orgmode/106974/focus=106996
-    (let ((pressed-key (substring (this-command-keys) -1))
-          entity-name)
-      (when (and (listp args) (eq 4 (car args)))
-        (setq entity-name (mh/org-entity-get-name pressed-key))
-        (when entity-name
-          (setq entity-name (concat "\\" entity-name "{}"))
-          (insert entity-name)
-          (message (concat "Inserted `org-entity' "
-                           (propertize entity-name
-                                       'face 'font-lock-function-name-face)
-                           " for the symbol "
-                           (propertize pressed-key
-                                       'face 'font-lock-function-name-face)
-                           "."))))
-      entity-name))
+  ;; It would be fine to use just (this-command-keys) instead of
+  ;; (substring (this-command-keys) -1) below in emacs 25+.
+  ;; But if the user pressed "C-u *", then
+  ;;  - in emacs 24.5, (this-command-keys) would return "^U*", and
+  ;;  - in emacs 25.x, (this-command-keys) would return "*".
+  ;; But in both versions, (substring (this-command-keys) -1) will return
+  ;; "*", which is what we want.
+  ;; http://thread.gmane.org/gmane.emacs.orgmode/106974/focus=106996
+  (let ((pressed-key (substring (this-command-keys) -1))
+        entity-name)
+    (when (and (listp args) (eq 4 (car args)))
+      (setq entity-name (mh/org-entity-get-name pressed-key))
+      (when entity-name
+        (setq entity-name (concat "\\" entity-name "{}"))
+        (insert entity-name)
+        (message (concat "Inserted `org-entity' "
+                         (propertize entity-name
+                                     'face 'font-lock-function-name-face)
+                         " for the symbol "
+                         (propertize pressed-key
+                                     'face 'font-lock-function-name-face)
+                         "."))))
+    entity-name))
 
-  ;; Run `org-self-insert-command' only if `mh/org-insert-org-entity-maybe'
-  ;; returns nil.
-  (advice-add 'org-self-insert-command :before-until #'mh/org-insert-org-entity-maybe)
+;; Run `org-self-insert-command' only if `mh/org-insert-org-entity-maybe'
+;; returns nil.
+(advice-add 'org-self-insert-command :before-until #'mh/org-insert-org-entity-maybe)
 
-  ;; `org-adapt-indentation' indents heading contents to the beginning of the heading. This is nice
-  ;; in a way, but limits the amount of horizontal space when you have deeply-nested headings.
-  (setq org-adapt-indentation nil)
-  (setq org-log-done 'time)
-  (setq org-todo-keywords
-        '((sequence "HOLD" "TODO" "FILE" "|" "DONE" "CANCELLED")))
-  (setq org-capture-templates
-        '(("b" "pdf" entry (file "~/doc/notes/wiki.org")
-           "* %f
+;; `org-adapt-indentation' indents heading contents to the beginning of the heading. This is nice
+;; in a way, but limits the amount of horizontal space when you have deeply-nested headings.
+(setq org-adapt-indentation nil)
+(setq org-log-done 'time)
+(setq org-todo-keywords
+      '((sequence "HOLD" "TODO" "FILE" "|" "DONE" "CANCELLED")))
+(setq org-capture-templates
+      '(("b" "pdf" entry (file "~/doc/notes/wiki.org")
+         "* %f
 :PROPERTIES:
 :NOTER_DOCUMENT: %F
 :END:
 * outline
 %(mh/pdf-outline-to-org-headline \"%F\" 1)")
-          ("p" "productivity" entry (file+headline "~/doc/notes/projects/productivity.org" "refile")
-           "* TODO %^{PROMPT}")
-          ("w" "work" entry (file+headline "~/doc/notes/projects/work.org" "refile")
-           "* TODO %^{PROMPT}")))
-  (setq org-agenda-files '("~/doc/notes/wiki"))
-  ;; use the current file for refile
-  (setq org-refile-targets '((nil . (:maxlevel . 100))))
-  ;; show candidates as slash-delimited (i.e. science/physics)
-  (setq org-refile-use-outline-path t)
-  ;; allows helm to get all completion candidates
-  (setq org-outline-path-complete-in-steps nil)
-  ;; speed up refile
-  (setq org-refile-use-cache t)
-  (setq org-agenda-follow-mode t)
-  ;; include plain lists in org cycling, which folds lists by default when a heading is first
-  ;; expanded.
-  (setq org-cycle-include-plain-lists 'integrate)
-  ;; Set file for the current entry.
-  (defun org-set-property-file (file)
-    (interactive
-     (list
-      (read-file-name "file: " "~/library/")))
-    (org-set-property "Filepath" (concat "[[file:" file "]]")))
-  ;; Outline percentage completion includes all children of node rather than just the direct
-  ;; children.
-  (setq org-checkbox-hierarchical-statistics nil)
+        ("p" "productivity" entry (file+headline "~/doc/notes/projects/productivity.org" "refile")
+         "* TODO %^{PROMPT}")
+        ("w" "work" entry (file+headline "~/doc/notes/projects/work.org" "refile")
+         "* TODO %^{PROMPT}")))
+(setq org-agenda-files '("~/doc/notes/wiki"))
+;; use the current file for refile
+(setq org-refile-targets '((nil . (:maxlevel . 100))))
+;; show candidates as slash-delimited (i.e. science/physics)
+(setq org-refile-use-outline-path t)
+;; allows helm to get all completion candidates
+(setq org-outline-path-complete-in-steps nil)
+;; speed up refile
+(setq org-refile-use-cache t)
+(setq org-agenda-follow-mode t)
+;; include plain lists in org cycling, which folds lists by default when a heading is first
+;; expanded.
+(setq org-cycle-include-plain-lists 'integrate)
+;; Set file for the current entry.
+(defun org-set-property-file (file)
+  (interactive
+   (list
+    (read-file-name "file: " "~/library/")))
+  (org-set-property "Filepath" (concat "[[file:" file "]]")))
+;; Outline percentage completion includes all children of node rather than just the direct
+;; children.
+(setq org-checkbox-hierarchical-statistics nil)
 
-  (setq org-format-latex-header "% Needed for proper rendering with some corner cases in luatex
+(setq org-format-latex-header "% Needed for proper rendering with some corner cases in luatex
 \\RequirePackage{luatex85}
 \\PassOptionsToPackage{usenames}{xcolor}
 \\documentclass[border={0pt 1pt}]{standalone}
@@ -242,173 +241,173 @@
 \\usepackage{math_local}")
 
 
-  ;; change default latex packages. grffile prevents asymptote from
-  ;; working correctly. inputenc and fontenc aren't needed with
-  ;; luatex.
-  (setq org-latex-default-packages-alist
-        '(("" "graphicx" t)
-          ("" "longtable" nil)
-          ("" "wrapfig" nil)
-          ("" "rotating" nil)
-          ("normalem" "ulem" t)
-          ("" "amsmath" t)
-          ("" "textcomp" t)
-          ("" "amssymb" t)
-          ("" "capt-of" nil)
-          ("" "hyperref" nil)))
+;; change default latex packages. grffile prevents asymptote from
+;; working correctly. inputenc and fontenc aren't needed with
+;; luatex.
+(setq org-latex-default-packages-alist
+      '(("" "graphicx" t)
+        ("" "longtable" nil)
+        ("" "wrapfig" nil)
+        ("" "rotating" nil)
+        ("normalem" "ulem" t)
+        ("" "amsmath" t)
+        ("" "textcomp" t)
+        ("" "amssymb" t)
+        ("" "capt-of" nil)
+        ("" "hyperref" nil)))
 
-  (add-to-list 'org-latex-packages-alist
-               '("" "mathtools" t))
-  (add-to-list 'org-latex-packages-alist
-               '("" "siunitx" t))
-  (add-to-list 'org-latex-packages-alist
-               '("" "bm" t))
-  (add-to-list 'org-latex-packages-alist
-               '("" "tabularx" t))
-  ;; needed for multicolumns in tables
-  (add-to-list 'org-latex-packages-alist
-               '("" "booktabs" t))
-  (add-to-list 'org-latex-packages-alist
-               '("" "xcolor" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "mathtools" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "siunitx" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "bm" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "tabularx" t))
+;; needed for multicolumns in tables
+(add-to-list 'org-latex-packages-alist
+             '("" "booktabs" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "xcolor" t))
 
-  ;; make clocking efforts persistant across emacs sessions.
-  ;; see [[info:org#Clocking%20Work%20Time][info:org#Clocking Work Time]]
-  (setq org-clock-persist 'history)
-  (org-clock-persistence-insinuate)
-  ;; Don't automatically attempt to resolve open clocks when
-  ;; clocking in. Functionally, this is a nice feature, but it
-  ;; creates a significant delay when there are many agenda
-  ;; files. The proper solution seems to be to call
-  ;; `org-resolve-clocks' manually.
-  (setq org-clock-auto-clock-resolution nil)
+;; make clocking efforts persistant across emacs sessions.
+;; see [[info:org#Clocking%20Work%20Time][info:org#Clocking Work Time]]
+(setq org-clock-persist 'history)
+(org-clock-persistence-insinuate)
+;; Don't automatically attempt to resolve open clocks when
+;; clocking in. Functionally, this is a nice feature, but it
+;; creates a significant delay when there are many agenda
+;; files. The proper solution seems to be to call
+;; `org-resolve-clocks' manually.
+(setq org-clock-auto-clock-resolution nil)
 
-  ;; Use footnotes for references.
-  (setq org-footnote-section "references")
+;; Use footnotes for references.
+(setq org-footnote-section "references")
 
-  ;; always leave a newline at the end of a heading section. `auto'
-  ;; doesn't seem to be good enough at guessing.
-  (setq org-blank-before-new-entry
-        '((heading . t)
-          (plain-list-item . auto)))
+;; always leave a newline at the end of a heading section. `auto'
+;; doesn't seem to be good enough at guessing.
+(setq org-blank-before-new-entry
+      '((heading . t)
+        (plain-list-item . auto)))
 
-  ;; set the column view format to include effort
-  (setq org-columns-default-format (concat "%60ITEM(Task) "
-                                           ;; "%TODO %3PRIORITY "
-                                           "%17Effort(Estimated Effort){:} "
-                                           "%CLOCKSUM"))
-  ;; keep the same column format in the agenda columns view
-  (setq org-agenda-overriding-columns-format org-columns-default-format)
+;; set the column view format to include effort
+(setq org-columns-default-format (concat "%60ITEM(Task) "
+                                         ;; "%TODO %3PRIORITY "
+                                         "%17Effort(Estimated Effort){:} "
+                                         "%CLOCKSUM"))
+;; keep the same column format in the agenda columns view
+(setq org-agenda-overriding-columns-format org-columns-default-format)
 
-  ;; ;; lualatex preview
-  (setq org-latex-pdf-process
-        '("latexmk -f -interaction=nonstopmode -output-directory=%o %f"))
+;; ;; lualatex preview
+(setq org-latex-pdf-process
+      '("latexmk -f -interaction=nonstopmode -output-directory=%o %f"))
 
-  (setq luasvgm
-        `(luasvgm :programs ("latexmk" "lualatex" "dvisvgm")
-                  :description "pdf > svg"
-                  :message "you need to install latexmk, lualatex and dvisvgm."
-                  :use-xcolor t
-                  :image-input-type "pdf"
-                  :image-output-type "svg"
-                  ;; The 72 / 200 corrects for the fact that DVISVGM
-                  ;; uses pt units. It gives us 72 PPI but we want
-                  ;; 200 DPI. Then, we want to upscale the image by
-                  ;; 3x.
-                  :image-size-adjust (,(/ (* 2.0 72.0) 200.0)  . ,(/ (* 2.0 72.0) 200.0))
-		  :latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
-                  :image-converter ("dvisvgm --pdf -n -b min -c %S -o %O %f")))
+(setq luasvgm
+      `(luasvgm :programs ("latexmk" "lualatex" "dvisvgm")
+                :description "pdf > svg"
+                :message "you need to install latexmk, lualatex and dvisvgm."
+                :use-xcolor t
+                :image-input-type "pdf"
+                :image-output-type "svg"
+                ;; The 72 / 200 corrects for the fact that DVISVGM
+                ;; uses pt units. It gives us 72 PPI but we want
+                ;; 200 DPI. Then, we want to upscale the image by
+                ;; 3x.
+                :image-size-adjust (,(/ (* 2.0 72.0) 200.0)  . ,(/ (* 2.0 72.0) 200.0))
+		:latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
+                :image-converter ("dvisvgm --pdf -n -b min -c %S -o %O %f")))
 
-  (add-to-list 'org-preview-latex-process-alist luasvgm)
-  (setq org-preview-latex-default-process 'luasvgm)
+(add-to-list 'org-preview-latex-process-alist luasvgm)
+(setq org-preview-latex-default-process 'luasvgm)
 
-  ;; export macros
-  (setq org-export-global-macros
-        '((comment . "")))
-  ;; export asynchronously
-  (setq org-export-in-background t)
+;; export macros
+(setq org-export-global-macros
+      '((comment . "")))
+;; export asynchronously
+(setq org-export-in-background t)
 
-  ;; fontify latex fragments (inline latex) natively
-  (setq org-highlight-latex-and-related '(native))
+;; fontify latex fragments (inline latex) natively
+(setq org-highlight-latex-and-related '(native))
 
-  ;; list of programs to use for opening links from org-mode
-  (setq org-file-apps '((auto-mode . emacs)
-                        ("\\.mm\\'" . default)
-                        ("\\.x?html?\\'" . default)
-                        ("\\.pdf\\'" . default)
-                        ("\\.gif\\'" . (lambda (file link)
-                                         (let ((my-image (create-image file))
-                                               (tmpbuf (get-buffer-create "*gif")))
-                                           (switch-to-buffer tmpbuf)
-                                           (erase-buffer)
-                                           (insert-image my-image)
-                                           (call-interactively 'image-mode)
-                                           (image-animate my-image))))))
+;; list of programs to use for opening links from org-mode
+(setq org-file-apps '((auto-mode . emacs)
+                      ("\\.mm\\'" . default)
+                      ("\\.x?html?\\'" . default)
+                      ("\\.pdf\\'" . default)
+                      ("\\.gif\\'" . (lambda (file link)
+                                       (let ((my-image (create-image file))
+                                             (tmpbuf (get-buffer-create "*gif")))
+                                         (switch-to-buffer tmpbuf)
+                                         (erase-buffer)
+                                         (insert-image my-image)
+                                         (call-interactively 'image-mode)
+                                         (image-animate my-image))))))
 
-  (setq org-confirm-babel-evaluate nil)
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((C . t)
-     (asymptote . t)
-     (awk . t)
-     (calc . t)
-     (clojure . t)
-     (comint . t)
-     (css . t)
-     (ditaa . t)
-     (dot . t)
-     ;; (ein . t)
-     (emacs-lisp . t)
-     (fortran . t)
-     (gnuplot . t)
-     (haskell . t)
-     (io . t)
-     (java . t)
-     (js . t)
-     (latex . t)
-     (ledger . t)
-     (lilypond . t)
-     (lisp . t)
-     (lua . t)
-     (makefile . t)
-     (matlab . t)
-     (maxima . t)
-     (mscgen . t)
-     (ocaml . t)
-     (octave . t)
-     (org . t)
-     (perl . t)
-     (picolisp . t)
-     (plantuml . t)
-     (python . t)
-     (ref . t)
-     (ruby . t)
-     (sass . t)
-     (scheme . t)
-     (screen . t)
-     (shell . t)
-     (shen . t)
-     (sql . t)
-     (sqlite . t)))
+(setq org-confirm-babel-evaluate nil)
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((C . t)
+   (asymptote . t)
+   (awk . t)
+   (calc . t)
+   (clojure . t)
+   (comint . t)
+   (css . t)
+   (ditaa . t)
+   (dot . t)
+   ;; (ein . t)
+   (emacs-lisp . t)
+   (fortran . t)
+   (gnuplot . t)
+   (haskell . t)
+   (io . t)
+   (java . t)
+   (js . t)
+   (latex . t)
+   (ledger . t)
+   (lilypond . t)
+   (lisp . t)
+   (lua . t)
+   (makefile . t)
+   (matlab . t)
+   (maxima . t)
+   (mscgen . t)
+   (ocaml . t)
+   (octave . t)
+   (org . t)
+   (perl . t)
+   (picolisp . t)
+   (plantuml . t)
+   (python . t)
+   (ref . t)
+   (ruby . t)
+   (sass . t)
+   (scheme . t)
+   (screen . t)
+   (shell . t)
+   (shen . t)
+   (sql . t)
+   (sqlite . t)))
 
-  ;; org crypt
-  (use-package org-crypt
-    :config
-    (setq org-crypt-disable-auto-save t)
-    (org-crypt-use-before-save-magic)
-    (setq org-tags-exclude-from-inheritance (quote ("crypt")))
-    (setq org-crypt-key "huszaghmatt@gmail.com"))
+;; org crypt
+(require 'org-crypt)
 
-  ;; identify org headlines with UUIDs
-  ;; see https://writequit.org/articles/emacs-org-mode-generate-ids.html
-  (require 'org-id)
-  (setq org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+(setq org-crypt-disable-auto-save t)
+(org-crypt-use-before-save-magic)
+(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+(setq org-crypt-key "huszaghmatt@gmail.com")
 
-  ;; don't bastardize windows when editing a source block
-  (setq org-src-window-setup 'other-window)
+;; identify org headlines with UUIDs
+;; see https://writequit.org/articles/emacs-org-mode-generate-ids.html
+(require 'org-id)
+(setq org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
 
-  ;; make contrib files visible
-  ;; TODO modify this for nixpkgs
-  (add-to-list 'load-path (concat user-emacs-directory "straight/repos/org/contrib/lisp") t))
+;; don't bastardize windows when editing a source block
+(setq org-src-window-setup 'other-window)
+
+;; make contrib files visible
+;; TODO modify this for nixpkgs
+(add-to-list 'load-path (concat user-emacs-directory "straight/repos/org/contrib/lisp") t)
 
 (setq mh-latex-scale 1.0)
 (defun mh/increase-latex-scale ()
