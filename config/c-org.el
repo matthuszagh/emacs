@@ -7,13 +7,9 @@
 ;; TODO consider setting org-capture-bookmark to nil
 
 (if (featurep 'straight)
-    (straight-use-package '(org-plus-contrib
-                            :host github
-                            :repo "matthuszagh/org-mode"
-                            :branch "beta-2"
-                            :files ("lisp/*.el" "contrib/lisp/*.el")
-        		    :includes (org)
-                            :local-repo "org")))
+    (progn
+      (straight-use-package 'org)
+      (straight-use-package 'org-contrib)))
 
 (require 'org)
 
@@ -231,19 +227,6 @@
 ;; children.
 (setq org-checkbox-hierarchical-statistics nil)
 
-(setq org-format-latex-header "% Needed for proper rendering with some corner cases in luatex
-\\RequirePackage{luatex85}
-\\PassOptionsToPackage{usenames}{xcolor}
-\\documentclass[border={0pt 1pt}]{standalone}
-\[PACKAGES]
-\[DEFAULT-PACKAGES]
-%% Declared math operators
-\\usepackage{math_local}")
-
-
-;; change default latex packages. grffile prevents asymptote from
-;; working correctly. inputenc and fontenc aren't needed with
-;; luatex.
 (setq org-latex-default-packages-alist
       '(("" "graphicx" t)
         ("" "longtable" nil)
@@ -269,6 +252,83 @@
              '("" "booktabs" t))
 (add-to-list 'org-latex-packages-alist
              '("" "xcolor" t))
+
+(setq org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}
+\\documentclass[preview]{standalone}
+\[PACKAGES]
+\[DEFAULT-PACKAGES]
+%% Declared math operators
+\\usepackage{math_local}")
+
+;; (defun mh//org-ascent-match-text-baseline (imagefile imagetype)
+;;   ""
+;;   (if (eq imagetype 'svg)
+;;       (let* ((viewbox (split-string
+;;                        (xml-get-attribute (car (xml-parse-file imagefile)) 'viewBox)))
+;;              (min-y (string-to-number (nth 1 viewbox)))
+;;              (height (string-to-number (nth 3 viewbox)))
+;;              (ascent (round (* -100 (/ min-y height)))))
+;;         (if (or (< ascent 0) (> ascent 100))
+;;             'center
+;;           ascent))
+;;     'center))
+
+(defun mh//org-latex-scale (imagedata imagetype)
+  ""
+  (/ (default-font-height) 27.0))
+
+(defun mh/update-org-latex-fragments-in-buffer ()
+  "Clear and redisplay all LaTeX fragments in the current buffer."
+  (if (eq major-mode 'org-mode)
+      (progn
+        (org-clear-latex-preview)
+        ;; 16 corresponds to the C-u C-u arg prefix.
+        (org-latex-preview 16))))
+
+;; update latex overlays when scaling the frame
+(advice-add 'mh/zoom-in :after #'mh/update-org-latex-fragments-in-buffer)
+(advice-add 'mh/zoom-out :after #'mh/update-org-latex-fragments-in-buffer)
+(advice-add 'mh/zoom-in-selected-frame :after #'mh/update-org-latex-fragments-in-buffer)
+(advice-add 'mh/zoom-out-selected-frame :after #'mh/update-org-latex-fragments-in-buffer)
+
+(setq org-latex-fragment-overlay-ascent #'org--match-text-baseline-ascent)
+(setq org-latex-fragment-scale #'mh//org-latex-scale)
+
+;; (defun mh//org--make-preview-overlay (beg end image &optional imagetype)
+;;   "Build an overlay between BEG and END using IMAGE file.
+;; Argument IMAGETYPE is the extension of the displayed image,
+;; as a string.  It defaults to \"png\"."
+;;   (let ((ov (make-overlay beg end))
+;; 	(imagetype (or (intern imagetype) 'png)))
+;;     ;; Set the :ascent (vertical position) of the latex fragment
+;;     ;; overlay as 100*(min-y/height), where min-y and height are
+;;     ;; extracted from the SVG file's viewbox.
+;;     (let ((image-ascent (if (eq imagetype 'svg)
+;;                             (let* ((viewbox (split-string
+;;                                              (xml-get-attribute (car (xml-parse-file image)) 'viewBox)))
+;;                                    (min-y (string-to-number (nth 1 viewbox)))
+;;                                    (height (string-to-number (nth 3 viewbox)))
+;;                                    (ascent (round (* -100 (/ min-y height)))))
+;;                               (if (or (< ascent 0) (> ascent 100))
+;;                                   'center
+;;                                 ascent))
+;;                           'center)))
+;;       (overlay-put ov 'org-overlay-type 'org-latex-overlay)
+;;       (overlay-put ov 'evaporate t)
+;;       (overlay-put ov
+;; 		   'modification-hooks
+;; 		   (list (lambda (o _flag _beg _end &optional _l)
+;; 			   (delete-overlay o))))
+;;       (overlay-put ov
+;; 		   'display
+;; 		   (list 'image :type imagetype :file image :ascent image-ascent)))))
+
+;; (advice-add 'org--make-preview-overlay :override #'mh//org--make-preview-overlay)
+;; (advice-remove 'org--make-preview-overlay #'mh//org--make-preview-overlay)
+
+;; change default latex packages. grffile prevents asymptote from
+;; working correctly. inputenc and fontenc aren't needed with
+;; luatex.
 
 ;; make clocking efforts persistant across emacs sessions.
 ;; see [[info:org#Clocking%20Work%20Time][info:org#Clocking Work Time]]
@@ -303,19 +363,24 @@
       '("latexmk -f -interaction=nonstopmode -output-directory=%o %f"))
 
 (setq luasvgm
-      `(luasvgm :programs ("latexmk" "lualatex" "dvisvgm")
-                :description "pdf > svg"
-                :message "you need to install latexmk, lualatex and dvisvgm."
-                :use-xcolor t
-                :image-input-type "pdf"
+      `(luasvgm :programs ("latex" "dvisvgm" "sed")
+                :description "dvi > svg"
+                :message "you need to install latex, dvisvgm, and sed."
+                :image-input-type "dvi"
                 :image-output-type "svg"
-                ;; The 72 / 200 corrects for the fact that DVISVGM
-                ;; uses pt units. It gives us 72 PPI but we want
-                ;; 200 DPI. Then, we want to upscale the image by
-                ;; 3x.
-                :image-size-adjust (,(/ (* 2.0 72.0) 200.0)  . ,(/ (* 2.0 72.0) 200.0))
-		:latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
-                :image-converter ("dvisvgm --pdf -n -b min -c %S -o %O %f")))
+		:latex-compiler ("latex -output-directory=%o %f")
+                :image-converter (,(concat "dvisvgm --no-fonts --exact-bbox -o %O %f"
+                                           " && sed -i 's/#000000/currentColor/g; s/#111111/none/g' %O"))))
+
+(setq org-format-latex-options
+      '(:foreground "Black"
+        :background "Transparent"
+        :scale 1.0
+        :html-foreground "Black"
+        :html-background "Transparent"
+        :html-scale 1.0
+        :matchers
+        ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
 (add-to-list 'org-preview-latex-process-alist luasvgm)
 (setq org-preview-latex-default-process 'luasvgm)
@@ -347,7 +412,6 @@
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((C . t)
-   (asymptote . t)
    (awk . t)
    (calc . t)
    (clojure . t)
@@ -355,28 +419,23 @@
    (css . t)
    (ditaa . t)
    (dot . t)
-   ;; (ein . t)
    (emacs-lisp . t)
    (fortran . t)
    (gnuplot . t)
    (haskell . t)
-   (io . t)
    (java . t)
    (js . t)
    (latex . t)
-   (ledger . t)
    (lilypond . t)
    (lisp . t)
    (lua . t)
    (makefile . t)
    (matlab . t)
    (maxima . t)
-   (mscgen . t)
    (ocaml . t)
    (octave . t)
    (org . t)
    (perl . t)
-   (picolisp . t)
    (plantuml . t)
    (python . t)
    (ref . t)
@@ -385,7 +444,6 @@
    (scheme . t)
    (screen . t)
    (shell . t)
-   (shen . t)
    (sql . t)
    (sqlite . t)))
 

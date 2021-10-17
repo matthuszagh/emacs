@@ -12,6 +12,8 @@
 
 (require 's)
 
+(setq org-babel-latex-pdf-svg-process "inkscape --pdf-poppler %f -T -l -o %O")
+
 ;; TODO customizations if patch accepted
 (defun latex-preamble-by-backend (params)
   (concat "\\documentclass{"
