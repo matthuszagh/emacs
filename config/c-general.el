@@ -16,6 +16,7 @@
 
 (require 'general)
 
+;; TODO I think this should probably go in c-window.el
 (add-to-list 'same-window-buffer-names "*General Keybindings*")
 
 ;; Update all existing buffers to use the keybindings set by
