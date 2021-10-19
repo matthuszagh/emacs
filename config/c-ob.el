@@ -12,34 +12,15 @@
 
 (require 's)
 
-(setq org-babel-latex-pdf-svg-process "inkscape --pdf-poppler %f -T -l -o %O")
+(setq org-babel-latex-pdf-svg-process (concat "inkscape --pdf-poppler %f -T -l -o %O"
+                                              " && sed -i 's/#000000/currentColor/g; s/#111111/none/g' %O"))
 
 ;; TODO customizations if patch accepted
 (defun latex-preamble-by-backend (params)
+  "Set the latex source block preamble."
   (concat "\\documentclass{"
           (cdr (assoc :_class params))
-          "}"
-          "\\definecolor{fg}{rgb}{"
-          (by-backend '((html . "0,0,0")
-                        (t . (org-latex-color :foreground))))
-          "}\n"
-          "\\definecolor{bg}{rgb}{"
-          (by-backend '((html . "1,1,1")
-                        (t . (org-latex-color :background))))
-          "}\n"
-          "\\def\\pc{"
-          (by-backend '((html . "100")
-                        (t . "20")))
-          "}\n"
-          (if (string= "tikz" (cdr (assoc :_class params)))
-              (concat "\\def\\eqnBoxCol{gray!30!bg}\n"
-                      "\\tikzset{emphBox/.style={draw=\\eqnBoxCol, fill=\\eqnBoxCol, "
-                      "thick, rectangle, inner sep=5pt, inner ysep=10pt}}\n"
-                      "\\ctikzset{-o/.style = {bipole nodes={none}{ocirc, fill=bg}}}\n"
-                      "\\ctikzset{o-/.style = {bipole nodes={ocirc, fill=bg}{none}}}\n"
-                      "\\ctikzset{o-o/.style = {bipole nodes={ocirc, fill=bg}{ocirc, fill=bg}}}\n"
-                      "\\ctikzset{*-o/.style = {bipole nodes={circ}{ocirc, fill=bg}}}\n"
-                      "\\ctikzset{o-*/.style = {bipole nodes={ocirc, fill=bg}{circ}}}\n"))))
+          "}"))
 
 (setq org-babel-latex-preamble
       (lambda (params)
@@ -47,11 +28,11 @@
 
 (setq org-babel-latex-begin-env
       (lambda (_)
-        "\\begin{document}{\\color{fg}"))
+        "\\begin{document}"))
 
 (setq org-babel-latex-end-env
       (lambda (_)
-        "}\\end{document}"))
+        "\\end{document}"))
 
 (use-package ox-latex
   :config
@@ -86,7 +67,6 @@ file rather than being provided as a default header argument."
           nil
         (concat "tmp/"
         	(sha1 (mh//org-src-block-contents))
-                (by-backend '((html . "-html") (t . "-org")))
                 ".svg"))))
 
   (defun mh//org-src-block-latex-post ()
