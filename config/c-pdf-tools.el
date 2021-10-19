@@ -4,10 +4,6 @@
 
 ;;; Code:
 
-(if (featurep 'straight)
-    (straight-use-package '(pdf-tools :type git :host github :repo "vedang/pdf-tools")))
-;;    (straight-use-package 'pdf-tools))
-
 (use-package pdf-tools
   :demand t
   :mode "\\.pdf\\'"
