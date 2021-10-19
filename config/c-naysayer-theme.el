@@ -22,6 +22,12 @@
 ;; revert to "Regular".
 (set-face-attribute 'fixed-pitch nil :family "unspecified")
 
+;; This by default uses "burlywood", which is very close to but
+;; distinct from the default face foreground. This slight difference
+;; clashes with the default one. Moreover, it makes inline math
+;; snippets use this burlywood color.
+(set-face-foreground 'font-latex-math-face (face-foreground 'default))
+
 (if (featurep 'org)
     (progn
       (set-face-foreground 'org-block (face-foreground 'default))
