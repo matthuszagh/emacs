@@ -75,6 +75,8 @@
   (setq LaTeX-verbatim-environments-local
         '("Verbatim" "lstlisting" "minted" "lstinline" "mintinline")))
 
+(require 'font-latex)
+
 (defun mh//simplify-tex-string ()
   (let ((str (buffer-string)))
     (shell-command-to-string (concat "python "

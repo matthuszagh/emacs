@@ -26,7 +26,10 @@
 ;; distinct from the default face foreground. This slight difference
 ;; clashes with the default one. Moreover, it makes inline math
 ;; snippets use this burlywood color.
-(set-face-foreground 'font-latex-math-face (face-foreground 'default))
+(if (featurep 'font-latex)
+    (progn
+      (set-face-foreground 'font-latex-math-face (face-foreground 'default)))
+  (mh:log-init "WARNING" "attempted to load 'naysayer-theme customizations for 'font-latex without loading 'font-latex"))
 
 (if (featurep 'org)
     (progn
@@ -60,7 +63,7 @@
                                                 :weight bold))
                                      ("DONE" . (:foreground "PaleGreen"
                                                 :weight bold))))
-      (setq org-fontify-done-headline nil))
+      (custom-set-variables '(org-fontify-done-headline nil)))
   (mh:log-init "ERROR" "attempted to load 'naysayer-theme customizations for 'org without loading 'org"))
 
 (if (featurep 'org-ref)
