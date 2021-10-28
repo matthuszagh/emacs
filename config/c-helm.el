@@ -38,9 +38,6 @@
 ;; maximum buffer string length before truncation
 (setq helm-buffer-max-length 60)
 (setq-default helm-follow-mode-persistent t)
-;; configure files cache
-(setq helm-ff-refresh-cache-delay 0.3)
-(setq helm-ff-cache-mode-post-delay 0.3)
 
 (provide 'c-helm)
 ;;; c-helm.el ends here
