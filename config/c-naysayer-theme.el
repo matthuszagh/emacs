@@ -36,8 +36,8 @@
       (set-face-foreground 'org-block (face-foreground 'default))
 
       ;; set inline code appearance
-      (set-face-background 'org-code "#113e47")
-      (set-face-foreground 'org-code (face-foreground 'default))
+      (set-face-background 'org-code (face-background 'default))
+      (set-face-foreground 'org-code "grey40")
       (set-face-foreground 'org-link "#86aed5")
 
       (set-face-foreground 'mh-org-roam-node-outline-prefix-face "grey40")
