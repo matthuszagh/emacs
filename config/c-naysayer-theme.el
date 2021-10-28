@@ -76,7 +76,13 @@
       (set-face-attribute 'helm-selection nil :background "dark slate blue")
       (let ((fcolor (face-foreground 'default)))
         (set-face-attribute 'helm-ff-file-extension nil :foreground fcolor)
-        (set-face-attribute 'helm-ff-file nil :foreground fcolor)))
+        (set-face-attribute 'helm-ff-file nil :foreground fcolor))
+      ;; Improve helm source header display. The default is a bit garish.
+      (set-face-attribute 'helm-source-header nil
+                          :height 1.0
+			  :background (face-background 'default)
+                          :family (face-attribute 'default :family)
+                          :underline t))
   (mh:log-init "ERROR" "attempted to load 'naysayer-theme customizations for 'helm without loading 'helm"))
 
 (provide 'c-naysayer-theme)

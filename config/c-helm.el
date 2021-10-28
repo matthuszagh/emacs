@@ -39,10 +39,6 @@
 (setq-default helm-follow-mode-persistent t)
 
 (custom-set-variables
- ;; TODO this does not fully remove the headline. I suspect this
- ;; prevents the headline from scrolling, though I'm not really
- ;; sure. I'd like to remove the headline alltogether.
- '(helm-display-header-line nil)
  ;; The input should appear at the bottom of the window (i.e., normal
  ;; minibuffer location). I feel that placing the input at the top of
  ;; the helm buffer is counterintuitive because it makes it appear as
