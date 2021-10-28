@@ -49,5 +49,15 @@
  ;; though the input is one of the selections from the list, which it
  ;; isn't.
  '(helm-echo-input-in-header-line nil))
+
+(if (featurep 'c-org-roam)
+    ;; Customizes helm to use
+    ;; `helm-completing-read-sync-default-handler' for
+    ;; `org-roam-node-find'. This propertizes the text display.
+    (add-to-list 'helm-completing-read-handlers-alist
+                 '(org-roam-node-find . helm-completing-read-sync-default-handler))
+  (mh:log-init "WARNING"
+               "attempted to load org-roam customizations for helm before loading 'c-org-roam."))
+
 (provide 'c-helm)
 ;;; c-helm.el ends here
