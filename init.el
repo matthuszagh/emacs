@@ -88,6 +88,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-image-mode)
 (require 'c-info-colors)
 (require 'c-info)
+(require 'c-js)
 (require 'c-json-mode)
 (require 'c-langtool)
 
