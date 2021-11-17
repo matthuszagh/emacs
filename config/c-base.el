@@ -136,6 +136,11 @@
 ;; Disable performance-affecting features when lines become very long
 (global-so-long-mode 1)
 
+;; Allow recursive minibuffers and provide an indication of recursion
+;; depth.
+(custom-set-variables '(enable-recursive-minibuffers t))
+(minibuffer-depth-indicate-mode nil)
+
 ;; TODO these should probably be in func and customize.
 (defun mh/sudo-find-file (file-name)
   "Like find-file, but opens FILE-NAME as root."
