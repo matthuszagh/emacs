@@ -277,5 +277,11 @@ For instance this will perform 'a' -> 'b'"
   (switch-to-buffer (get-buffer-create "*scratch*"))
   (lisp-interaction-mode))
 
+(defun mh/save-without-hooks ()
+  "Save current buffer without calling before-save-hooks."
+  (interactive)
+  (let ((before-save-hook nil))
+    (save-buffer)))
+
 (provide 'c-base)
 ;;; c-base.el ends here
