@@ -86,7 +86,7 @@
          (level (org-roam-node-level node))
          (outline-display outline-path)
          (tags-width 15)
-         (path-width (- (window-width) mh//org-roam-helm-tags-width)))
+         (path-width (- (mh/window-width) mh//org-roam-helm-tags-width)))
     ;; if the current node is not the file-level node, append the file
     ;; level node to `outline-display', which otherwise isn't part of
     ;; the outline path.
@@ -150,14 +150,15 @@
                   (org-roam-node-tags node) " ")
       nil 'face 'mh-org-roam-node-tags-face))
 
-(setq org-roam-node-display-template
-      (lambda ()
-        (let ((tags-width 25))
-          (concat "${outline:"
-                  (number-to-string (- (window-width) tags-width 1))
-                  "} ${tags-stylized:"
-                  (number-to-string tags-width)
-                  "}"))))
+(custom-set-variables `(org-roam-node-display-template
+                        (lambda ()
+                          (let ((tags-width 25))
+                            (concat "${outline:"
+                                    (number-to-string (- (mh/window-width)
+                                                         tags-width 1))
+                                    "} ${tags-stylized:"
+                                    (number-to-string tags-width)
+                                    "}")))))
 
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here

@@ -283,5 +283,13 @@ For instance this will perform 'a' -> 'b'"
   (let ((before-save-hook nil))
     (save-buffer)))
 
+(defun mh/window-width ()
+  "Window width, in number of characters."
+  ;; For some reason, `window-max-chars-per-line' overreports the
+  ;; number of available characters by one in EXWM buffers.
+  (if exwm-window-type
+      (- (window-max-chars-per-line) 1)
+    (window-max-chars-per-line)))
+
 (provide 'c-base)
 ;;; c-base.el ends here
