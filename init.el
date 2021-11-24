@@ -219,7 +219,8 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-lispyville)
 (require 'c-general)
 ;; exwm
-(require 'c-exwm)
+(if (display-images-p)
+    (require 'c-exwm))
 
 ;; TODO find another location for these
 (defun mh/nix-rebuild ()
