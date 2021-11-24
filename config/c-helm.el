@@ -50,8 +50,11 @@
     ;; Customizes helm to use
     ;; `helm-completing-read-sync-default-handler' for
     ;; `org-roam-node-find'. This propertizes the text display.
-    (add-to-list 'helm-completing-read-handlers-alist
-                 '(org-roam-node-find . helm-completing-read-sync-default-handler))
+    (progn
+      (add-to-list 'helm-completing-read-handlers-alist
+                   '(org-roam-node-find . helm-completing-read-sync-default-handler))
+      (add-to-list 'helm-completing-read-handlers-alist
+                   '(org-roam-node-insert . helm-completing-read-sync-default-handler)))
   (mh:log-init "WARNING"
                "attempted to load org-roam customizations for helm before loading 'c-org-roam."))
 
