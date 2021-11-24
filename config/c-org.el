@@ -229,7 +229,8 @@
  '(org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}
 \\documentclass[preview]{standalone}
 %% Declared math operators
-\\usepackage{math_local}"))
+\\usepackage{math_local}
+\\usepackage{common_local}"))
 
 ;; (defun mh//org-ascent-match-text-baseline (imagefile imagetype)
 ;;   ""
