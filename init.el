@@ -262,7 +262,10 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 ;; end TODO
 
 ;; log a message in *init* for all configuration files not loaded
-(let ((config-files (directory-files config-dir)))
+(let ((config-files (-remove (lambda (elt)
+                               (or (string-equal elt ".")
+                                   (string-equal elt "..")))
+                             (directory-files config-dir))))
   (dolist (file config-files)
     (let ((feature-string (file-name-base file)))
       (unless (featurep (intern feature-string))
