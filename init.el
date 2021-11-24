@@ -119,6 +119,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-org)
 (require 'c-ol)
 (require 'c-ox)
+(require 'c-ox-latex)
 (require 'c-org-ml)
 (require 'c-org-edna)
 (require 'c-org-fragtog)

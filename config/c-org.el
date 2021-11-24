@@ -133,9 +133,6 @@
 ;; super/subscripts.
 (setq org-pretty-entities-include-sub-superscripts nil)
 
-;; don't trigger error for broken links during export
-(setq org-export-with-broken-links t)
-
 ;; permit still typing emphasis characters as normal characters
 ;; see https://emacs.stackexchange.com/a/16746/20317
 (defun mh/org-entity-get-name (char)
@@ -227,38 +224,12 @@
 ;; children.
 (setq org-checkbox-hierarchical-statistics nil)
 
-(setq org-latex-default-packages-alist
-      '(("" "graphicx" t)
-        ("" "longtable" nil)
-        ("" "wrapfig" nil)
-        ("" "rotating" nil)
-        ("normalem" "ulem" t)
-        ("" "amsmath" t)
-        ("" "textcomp" t)
-        ("" "amssymb" t)
-        ("" "capt-of" nil)
-        ("" "hyperref" nil)))
-
-(add-to-list 'org-latex-packages-alist
-             '("" "mathtools" t))
-(add-to-list 'org-latex-packages-alist
-             '("" "siunitx" t))
-(add-to-list 'org-latex-packages-alist
-             '("" "bm" t))
-(add-to-list 'org-latex-packages-alist
-             '("" "tabularx" t))
-;; needed for multicolumns in tables
-(add-to-list 'org-latex-packages-alist
-             '("" "booktabs" t))
-(add-to-list 'org-latex-packages-alist
-             '("" "xcolor" t))
-
-(setq org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}
+(custom-set-variables
+ ;; LaTeX preamble for fragments.
+ '(org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}
 \\documentclass[preview]{standalone}
-\[PACKAGES]
-\[DEFAULT-PACKAGES]
 %% Declared math operators
-\\usepackage{math_local}")
+\\usepackage{math_local}"))
 
 ;; (defun mh//org-ascent-match-text-baseline (imagefile imagetype)
 ;;   ""
@@ -358,10 +329,6 @@
 ;; keep the same column format in the agenda columns view
 (setq org-agenda-overriding-columns-format org-columns-default-format)
 
-;; ;; lualatex preview
-(setq org-latex-pdf-process
-      '("latexmk -f -interaction=nonstopmode -output-directory=%o %f"))
-
 (setq luasvgm
       `(luasvgm :programs ("latex" "dvisvgm" "sed")
                 :description "dvi > svg"
@@ -370,7 +337,7 @@
                 :image-output-type "svg"
 		:latex-compiler ("latex -output-directory=%o %f")
                 :image-converter (,(concat "dvisvgm --no-fonts --exact-bbox -o %O %f"
-                                           " && sed -i 's/#000000/currentColor/g; s/#111111/none/g' %O"))))
+                                           " && sed -i 's/#000000/currentColor/g; s/#ffffff/none/g' %O"))))
 
 (setq org-format-latex-options
       '(:foreground "Black"
@@ -384,12 +351,6 @@
 
 (add-to-list 'org-preview-latex-process-alist luasvgm)
 (setq org-preview-latex-default-process 'luasvgm)
-
-;; export macros
-(setq org-export-global-macros
-      '((comment . "")))
-;; export asynchronously
-(setq org-export-in-background t)
 
 ;; fontify latex fragments (inline latex) natively
 (setq org-highlight-latex-and-related '(native))
