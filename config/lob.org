@@ -1,12 +1,18 @@
 #+NAME: attr_wrap
 #+header: :exports none
-#+BEGIN_SRC sh :var data="" :var htmlwidth="100%" :var orgwidth="1000" :var caption="" :var name="" :results output
+#+BEGIN_SRC sh :var data="" :var orgwidth="" :var htmlwidth="" :var caption="" :var name="" :results output
   if [ -n "$caption" ]; then
     echo "#+CAPTION: $caption"
   fi
-  echo "#+ATTR_ORG: :width $orgwidth"
-  echo "#+ATTR_HTML: :width $htmlwidth"
-  echo "#+NAME: $name"
+  if [ -n "$orgwidth" ]; then
+    echo "#+ATTR_ORG: :width $orgwidth"
+  fi
+  if [ -n "$htmlwidth" ]; then
+    echo "#+ATTR_HTML: :width $htmlwidth"
+  fi
+  if [ -n "$name" ]; then
+    echo "#+NAME: $name"
+  fi
   echo "$data"
 #+END_SRC
 
