@@ -291,5 +291,21 @@ For instance this will perform 'a' -> 'b'"
       (- (window-max-chars-per-line) 1)
     (window-max-chars-per-line)))
 
+(defun mh/directory-files-replace-string (directory search replace)
+  "Replace literal string in all files within a directory.
+
+DIRECTORY is the directory to search.  SEARCH is the string to
+replace, and REPLACE is its replacement.
+
+This function only searches the top level of files in the
+directory."
+  (let ((files (directory-files directory t)))
+    (dolist (file files)
+      (unless (equal (substring file -1 nil) ".")
+        (progn (find-file-literally file)
+               (replace-string search replace)
+               (save-buffer)
+               (kill-buffer (get-file-buffer file)))))))
+
 (provide 'c-base)
 ;;; c-base.el ends here
