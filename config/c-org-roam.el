@@ -32,39 +32,40 @@
                            (add-hook 'before-save-hook
                                      'mh//org-update-last-modified 0 t)))
 
-(setq org-roam-capture-templates
-      `(("d" "default" plain "%?"
-         :if-new
-         ;; slug is a suitable converted filename (e.g. spaces
-         ;; converted to underscores)
-         (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                    ,(concat ":PROPERTIES:\n"
-                             ":ID: %(org-id-new)\n"
-                             ":END:\n"
-                             "#+TITLE: ${title}\n"
-                             "#+filetags: \n"
-                             "#+CREATED: %(mh/time-stamp)\n"
-                             "#+MODIFIED: %(mh/time-stamp)\n"))
-         :unnarrowed t)
-        ("r" "ref" plain ""
-         :if-new
-         (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                    ,(concat ":PROPERTIES:\n"
-                             ":ID: %(org-id-new)\n"
-                             ":ROAM_REFS: cite:${citekey}\n"
-                             ":END:\n"
-                             "#+TITLE: ${title}\n"
-                             "#+filetags:\n"
-                             "#+CREATED: %(mh/time-stamp)\n"
-                             "#+MODIFIED: %(mh/time-stamp)\n\n"
-                             "* outline\n"
-                             ":PROPERTIES:\n"
-                             ":NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")\n"
-                             ":END:\n"
-                             "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
-         :unnarrowed t)))
+(custom-set-variables `(org-roam-capture-templates
+                        `(("d" "default" plain "%?"
+                           :if-new
+                           ;; slug is a suitable converted filename (e.g. spaces
+                           ;; converted to underscores)
+                           (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      ,(concat ":PROPERTIES:\n"
+                                               ":ID: %(org-id-new)\n"
+                                               ":END:\n"
+                                               "#+TITLE: ${title}\n"
+                                               "#+filetags: \n"
+                                               "#+CREATED: %(mh/time-stamp)\n"
+                                               "#+MODIFIED: %(mh/time-stamp)\n"))
+                           :unnarrowed t)
+                          ("r" "ref" plain ""
+                           :if-new
+                           (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                                      ,(concat ":PROPERTIES:\n"
+                                               ":ID: %(org-id-new)\n"
+                                               ":ROAM_REFS: cite:${citekey}\n"
+                                               ":END:\n"
+                                               "#+TITLE: ${title}\n"
+                                               "#+filetags:\n"
+                                               "#+CREATED: %(mh/time-stamp)\n"
+                                               "#+MODIFIED: %(mh/time-stamp)\n\n"
+                                               "* outline\n"
+                                               ":PROPERTIES:\n"
+                                               ":NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")\n"
+                                               ":END:\n"
+                                               "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
+                           :unnarrowed t))))
 
-(defface mh-org-roam-node-outline-prefix-face '((t nil))
+(defface mh-org-roam-node-outline-prefix-face
+  '((t :extend t))
   "Face for the outline prefix when displaying a node.")
 
 (defface mh-org-roam-node-outline-suffix-face '((t nil))
