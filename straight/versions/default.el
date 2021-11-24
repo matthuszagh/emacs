@@ -128,7 +128,7 @@
  ("org-api" . "1a0841e8dd4bd3d0e80f7955d2cd40176245d4fa")
  ("org-board" . "1393bd46d11a81328ed4fb8471831415a3efe224")
  ("org-edna" . "8a14af7baadb3e4021d40e2b4ebdcee66dab4783")
- ("org-fragtog" . "92119e3ae7c9a0ae2b5c9d9e4801b5fdc4804ad7")
+ ("org-fragtog" . "15861261a437aca2ec858317de71603d2957b423")
  ("org-ml" . "5d61f456b0a639e178d6ae4f210e28be5621a620")
  ("org-noter" . "9ead81d42dd4dd5074782d239b2efddf9b8b7b3d")
  ("org-ref" . "7ba79c8e69f846be48bea2c60034febfbf1b8d4b")
