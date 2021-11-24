@@ -19,7 +19,7 @@
 (add-hook 'after-init-hook
           (lambda ()
             (unless (featurep 'nix-mode)
-              (mh:log-init "ERROR" "'aggressive-indent included 'nix-mode configurations, but 'nix-mode was never loaded"))))
+              (mh:log-init "WARNING" "'aggressive-indent included 'nix-mode configurations, but 'nix-mode was never loaded"))))
 (add-to-list 'aggressive-indent-excluded-modes 'nix-mode)
 
 (provide 'c-aggressive-indent)
