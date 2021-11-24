@@ -208,8 +208,14 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-elpy)
 
 ;; themes
-(require 'c-naysayer-theme)
+;; Only load naysayer if we're in a window manager. We use whether
+;; we're able to display images as a proxy for this. Obviously, that's
+;; a hack and not ideal, but it seems to work ok. In the console, the
+;; colors make many things completely illegible.
+(if (display-images-p)
+    (require 'c-naysayer-theme))
 (require 'c-spaceline)
+
 ;; keybindings
 (require 'c-evil)
 (require 'c-evil-collection)
