@@ -112,14 +112,7 @@
             (setq exwm-randr-workspace-monitor-plist '(0 "DisplayPort-0" 1 "DisplayPort-1"))
             (start-process-shell-command
              "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate left"
-                                  " --output DisplayPort-1 --right-of DisplayPort-0 --rotate left"))))))
-  ;; Increase screen scaling for main computer monitor
-  (if (not (string= "ryzen3950\n" (shell-command-to-string "hostname")))
-      (add-hook 'exwm-init-hook
-                (lambda ()
-                  (exwm-workspace-switch 0)
-                  (mh/zoom-in-selected-frame)
-                  (mh/zoom-in-selected-frame)))))
+                                  " --output DisplayPort-1 --right-of DisplayPort-0 --rotate left")))))))
 
 (exwm-change-screen-hook)
 (add-hook 'exwm-init-hook 'exwm-change-screen-hook)
