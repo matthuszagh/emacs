@@ -106,9 +106,11 @@
 (setq-default tab-width 8)          ; but maintain correct appearance
 
 ;; Set default font.
-;; TODO set font based on screen dimensions.
 (defconst mh-font "Source Code Pro")
-(defconst mh-font-size 8)
+;; Setting the font size to 9pt sets the font to 9/72 in. Therefore,
+;; this is a consistent size and does not depend on the screen
+;; resolution.
+(defconst mh-font-size 9)
 (add-to-list 'default-frame-alist
              `(font . ,(concat mh-font "-" (number-to-string mh-font-size))))
 
