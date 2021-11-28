@@ -158,6 +158,15 @@ and then move the page number to after the pluses.
   (save-excursion
     (yank)))
 
+(defun mh/pdf-view-actual-size ()
+  "Display a PDF such that the dimensions match the physical size of an A4 paper.
+TODO this should be extended to other paper sizes."
+  (interactive)
+  (let* ((current-width (car (pdf-view-image-size)))
+         (a4-width-in (/ 210 25.4))
+         (target-width (* a4-width-in (car (mh/dpi)))))
+    (pdf-view-enlarge (/ target-width current-width))))
+
 (provide 'c-pdf-tools)
 
 ;;; c-pdf-tools.el ends here
