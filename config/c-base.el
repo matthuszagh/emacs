@@ -240,7 +240,7 @@ hasn't changed. This clears the image cache to prevent this."
 
 (defun mh/insert-current-date ()
   (interactive)
-  (insert (shell-command-to-string "echo -n $(date +%d/%m/%Y)")))
+  (insert (shell-command-to-string "echo -n $(date +%Y-%m-%d)")))
 
 (defun mh/time-stamp ()
   (format-time-string "[%Y-%m-%d %a %H:%M]"))
