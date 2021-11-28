@@ -314,7 +314,6 @@ directory."
 Returns a list in which the first number is the DPI in the
 horizontal direction, and the second number is the DPI in the
 vertical direction."
-  (interactive)
   (let ((in/mm (/ 1 25.4)))
     (list (/ (display-pixel-width)
              (* in/mm (display-mm-width)))
