@@ -246,8 +246,14 @@
 ;;     'center))
 
 (defun mh//org-latex-scale (imagedata imagetype)
-  ""
-  (/ (default-font-height) 27.0))
+  "Scale inline LaTeX fragments to match the height of the surrounding text."
+  (let ((dpi-y (cadr (mh/dpi)))
+        (pt/in 72.27)
+        ;; we use a latex font size of 10pt
+        (latex-height-pt 10))
+    (let ((current-font-height-in (/ (default-font-height) dpi-y))
+          (latex-height-in (/ latex-height-pt pt/in)))
+      (/ current-font-height-in latex-height-in))))
 
 (defun mh/update-org-latex-fragments-in-buffer ()
   "Clear and redisplay all LaTeX fragments in the current buffer."
