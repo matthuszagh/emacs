@@ -258,7 +258,13 @@ transformed later for appearance."
          (tags-display (substring full-tags-display
                                   nil
                                   (min (length full-tags-display) tags-width)))
-         (path-width (- (mh/window-width) mh//org-roam-helm-tags-width)))
+         ;; Total helm window width. Using the currently active window
+         ;; instead of the helm window can use the width of the
+         ;; minibuffer instead.
+         (window-width (mh/window-width (helm-window)))
+         ;; Maximum acceptable path width. Leave room for tags and a
+         ;; space between the path and tags.
+         (path-width (- window-width tags-width 1)))
     ;; if the current node is not the file-level node, append the file
     ;; level node to `outline-display', which otherwise isn't part of
     ;; the outline path.
@@ -310,7 +316,7 @@ transformed later for appearance."
       ;; Still need to present (DISPLAY . REAL) since action needs
       ;; real.
       `(,(concat outline-string
-                 (make-string (- (mh/window-width)
+                 (make-string (- window-width
                                  (length outline-string)
                                  1
                                  tags-width)
@@ -345,13 +351,9 @@ transformed later for appearance."
                  (setq mh-org-roam-node-cache result)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
-;; TODO :filtered-candidate-transformer doesn't obey the shortened
-;; string produced by
-;; `mh/org-roam-node-find-filtered-candidate-transformer' after the
-;; initial value, but only on my laptop. Otherwise, this seems to be
-;; pretty fast. The last thing to do is to update
-;; `mh-org-roam-node-cache' asynchronously, whenever the database
-;; changes, and probably to persist it across sessions.
+;; The last thing to do is to update `mh-org-roam-node-cache'
+;; asynchronously, whenever the database changes, and probably to
+;; persist it across sessions.
 (defun mh/org-roam-node-find ()
   "Personal version of org-roam-node-find."
   (interactive)
