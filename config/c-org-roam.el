@@ -161,5 +161,211 @@
                                     (number-to-string tags-width)
                                     "}")))))
 
+
+(defun mh/org-roam-node-find-todo ()
+  "Search all org-roam nodes labelled TODO."
+  (interactive)
+  (funcall-interactively 'org-roam-node-find
+                         nil
+                         nil
+                         (lambda (node)
+                           (equal "TODO" (org-roam-node-todo node)))))
+
+(defun mh/org-add-ids-to-headlines-in-file ()
+  "Add ID properties to all headlines in the current file which
+do not already have one.
+Taken from https://stackoverflow.com/a/16247032/5710525."
+  (interactive)
+  (org-map-entries 'org-id-get-create))
+
+;; Add the ID property to all headings in the current file before saving.
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook 'mh/org-add-ids-to-headlines-in-file nil 'local)))
+
+(defun mh/org-roam-db-async ()
+  "Update the org-roam database asynchronously."
+  (interactive)
+  (async-start (lambda ()
+                 (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
+                 (load "~/.config/emacs/config/c-no-littering.el")
+                 (load "~/.config/emacs/config/c-org-roam.el")
+                 (org-roam-db-sync))
+               (lambda (result)
+                 (message "mh/org-roam-db-async complete"))))
+
+(defun mh/async-update-org-roam-node-cache ()
+  "Asynchronous update of mh-org-roam-node-cache."
+  (async-start (lambda ()
+                 (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
+                 (load "~/.config/emacs/config/c-base.el")
+                 (load "~/.config/emacs/config/c-org-roam.el")
+                 (org-roam-node-read--completions))
+               (lambda (result)
+                 (setq mh-org-roam-node-cache result)
+                 (message "mh/async-update-org-roam-node-cache complete"))))
+
+;; new
+
+(defun mh/org-roam-node-full-path (node)
+  "Org-roam NODE outline path, including the appended title."
+  (let* ((outline (append (org-roam-node-olp node)
+                          `(,(org-roam-node-title node))))
+         (level (org-roam-node-level node)))
+    (if (> level 0)
+        (let* ((file (org-roam-node-file node))
+               (title (car (org-roam-db-query
+                            [:select title :from nodes
+                             :where (and (= file $s1)
+                                         (= level 0))]
+                            file))))
+          (setq outline (append title outline))))
+    outline))
+
+(defun mh/org-roam-node-real-display-match (node)
+  "Take an org-roam NODE and compute a (DISPLAY . REAL) whose sole
+purpose is for matching and to be fast.  Display will be further
+transformed later for appearance."
+  (let ((display (mapconcat (lambda (x) x)
+                            (append (mh/org-roam-node-full-path node)
+                                    (org-roam-node-tags node))
+                            " ")))
+    `(,display . ,node)))
+
+(defun mh/org-roam-node-candidates ()
+  "Candidates for mh/org-roam-node-find."
+  (let ((nodes (org-roam-node-list)))
+    (mapcar 'mh/org-roam-node-real-display-match nodes)))
+
+(defun mh//org-roam-node-find-node-filter (node-display-real)
+  "Outline string to display for an org-roam node."
+  ;; `outline-display' is a list of each headline path in the outline
+  ;; we display. We initialize it to the full path and then remove
+  ;; elements as needed.
+  (let* ((node (cdr node-display-real))
+         (outline-path (append (org-roam-node-olp node)
+                               `(,(org-roam-node-title node))))
+         (level (org-roam-node-level node))
+         (outline-display outline-path)
+         (tags-width 15)
+         (full-tags-display (org-add-props (mapconcat
+                                            (lambda (v)
+                                              (concat (or (cdr (assoc "tags" org-roam-node-template-prefixes))
+                                                          "")
+                                                      v))
+                                            (org-roam-node-tags node) " ")
+                                nil 'face 'mh-org-roam-node-tags-face))
+         (tags-display (substring full-tags-display
+                                  nil
+                                  (min (length full-tags-display) tags-width)))
+         (path-width (- (mh/window-width) mh//org-roam-helm-tags-width)))
+    ;; if the current node is not the file-level node, append the file
+    ;; level node to `outline-display', which otherwise isn't part of
+    ;; the outline path.
+    (if (> level 0)
+        (let* ((file (org-roam-node-file node))
+               (title (car (org-roam-db-query
+                            [:select title :from nodes
+                             :where (and (= file $s1)
+                                         (= level 0))]
+                            file))))
+          (setq outline-display (append title outline-display))))
+    ;; stylize parts of the outline according to custom faces
+    (setq outline-display
+          (--map-last t (org-add-props it nil 'face 'mh-org-roam-node-outline-suffix-face)
+	              (--map (org-add-props it nil 'face 'mh-org-roam-node-outline-prefix-face)
+                             outline-display)))
+    ;; `(length outline-display)' computes the string length of all
+    ;; separators. 2 computes the maximum difference between the
+    ;; string length of '...' and a headline string, in case on
+    ;; headline is shorter than 3 chars.
+    (while (and (>= (+ (-sum (cl-map 'list 'length outline-display))
+                       (length outline-display)
+                       2)
+                    path-width)
+                ;; Don't remove the first or last headline path. Deal
+                ;; with this case later.
+                (>= (length outline-display) 2))
+      (setq outline-display (-remove-at 1 outline-display)))
+    ;; Remove the first headline path if the first and last
+    ;; collectively exceed `path-width'.
+    (if (>= (+ (-sum (cl-map 'list 'length outline-display))
+               (length outline-display)
+               2)
+            path-width)
+        (setq outline-display (-remove-at 0 outline-display)))
+    (let ((outline-string (car outline-display)))
+      ;; The total headline path exceeded the max width, so we cut out
+      ;; one or more path elements.
+      (if (< (length outline-display)
+             (length outline-path))
+          (if (eq (length outline-display) 1)
+              (concat ".../" outline-string)
+            (setq outline-string (concat outline-string "/..."))))
+      (let ((index 1))
+        (while (< index (length outline-display))
+	  (setq outline-string (concat outline-string "/"
+                                       (nth index outline-display)))
+          (setq index (+ 1 index))))
+      ;; Still need to present (DISPLAY . REAL) since action needs
+      ;; real.
+      `(,(concat outline-string
+                 (make-string (- (mh/window-width)
+                                 (length outline-string)
+                                 1
+                                 tags-width)
+                              (string-to-char " "))
+                 tags-display)
+        .
+        ,node))))
+
+(defun mh/org-roam-node-find-filtered-candidate-transformer (candidates source)
+  ""
+  (mapcar #'mh//org-roam-node-find-node-filter candidates))
+
+(defvar mh-org-roam-node-cache nil
+  "Cache for mh/org-roam-node-find.")
+
+(defun mh/update-org-roam-node-cache ()
+  "Update mh-org-roam-node-cache."
+  ;; First ensure the database is up-to-date.
+  (org-roam-db-sync)
+  (setq mh-org-roam-node-cache (mh/org-roam-node-candidates)))
+
+(defun mh/update-org-roam-node-cache-async ()
+  "Update mh-org-roam-node-cache asynchronously."
+  (interactive)
+  (async-start (lambda ()
+                 (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
+                 (load "~/.config/emacs/config/c-no-littering.el")
+                 (load "~/.config/emacs/config/c-org-roam.el")
+                 (org-roam-db-sync)
+                 (mh/org-roam-node-candidates))
+               (lambda (result)
+                 (setq mh-org-roam-node-cache result)
+                 (message "mh/update-org-roam-node-cache-async complete"))))
+
+;; TODO :filtered-candidate-transformer doesn't obey the shortened
+;; string produced by
+;; `mh/org-roam-node-find-filtered-candidate-transformer' after the
+;; initial value, but only on my laptop. Otherwise, this seems to be
+;; pretty fast. The last thing to do is to update
+;; `mh-org-roam-node-cache' asynchronously, whenever the database
+;; changes, and probably to persist it across sessions.
+(defun mh/org-roam-node-find ()
+  "Personal version of org-roam-node-find."
+  (interactive)
+  (helm
+   :sources (helm-build-sync-source "org-roam-node"
+              ;;:init #'mh/update-org-roam-node-cache
+              :candidates 'mh-org-roam-node-cache
+              :candidate-number-limit 100
+              :filtered-candidate-transformer 'mh/org-roam-node-find-filtered-candidate-transformer
+              :action 'org-roam-node-visit
+              ;;:filter-one-by-one #'mh//org-roam-node-find-node-filter
+              )
+   :buffer "*org-roam-node*"
+   :prompt "node: "))
+
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here
