@@ -285,13 +285,14 @@ For instance this will perform 'a' -> 'b'"
   (let ((before-save-hook nil))
     (save-buffer)))
 
-(defun mh/window-width ()
-  "Window width, in number of characters."
+(defun mh/window-width (&optional window)
+  "WINDOW width, in number of characters.
+If WINDOW is omitted, use the current window, otherwise use the specified window."
   ;; For some reason, `window-max-chars-per-line' overreports the
   ;; number of available characters by one in EXWM buffers.
   (if exwm-window-type
-      (- (window-max-chars-per-line) 1)
-    (window-max-chars-per-line)))
+      (- (window-max-chars-per-line window) 1)
+    (window-max-chars-per-line window)))
 
 (defun mh/directory-files-replace-string (directory search replace)
   "Replace literal string in all files within a directory.
