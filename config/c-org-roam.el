@@ -358,25 +358,30 @@ before their subheadings (which is what we want), but for example
 'Jackson' doesn't really produce the expected results."
   (helm-fuzzy-matching-default-sort-fn-1 candidates nil nil nil))
 
-(defun mh/org-roam-node-find ()
-  "Personal version of org-roam-node-find."
+(defun mh/org-roam-node-read (&optional initial-input filter-fn sort-fn require-match)
+  "Personal version of `org-roam-node-read'."
   (interactive)
   (helm
    :sources `(,(helm-build-sync-source "org-roam-node"
                  :candidates 'mh-org-roam-node-cache
                  :candidate-number-limit 100
                  :filtered-candidate-transformer '(mh/org-roam-node-sort
-                                                   mh/org-roam-node-find-filtered-candidate-transformer)
-                 :action 'org-roam-node-visit)
-              ;; create new node if none found
+                                                   mh/org-roam-node-find-filtered-candidate-transformer))
               ,(helm-build-dummy-source "new node"
                  :action (lambda (node)
                            (org-roam-capture-
                             :node (org-roam-node-create :title node)
                             :templates nil
                             :props '(:finalize find-file)))))
+   :default (lambda ()
+              (or initial-text
+                  (helm-aif (thing-at-point 'symbol) (regexp-quote it))))
    :buffer "*org-roam-node*"
    :prompt "node: "))
+
+;; TODO it would probably be better to have a customization that
+;; allowed customizing this, rather than needing to override it.
+(advice-add 'org-roam-node-read :override 'mh/org-roam-node-read)
 
 (defun mh//maybe-update-org-roam-node-cache ()
   "Update `mh-org-roam-node-cache' if not currently being updated."
