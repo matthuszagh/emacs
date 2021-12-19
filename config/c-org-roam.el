@@ -351,6 +351,13 @@ transformed later for appearance."
                  (setq mh-org-roam-node-cache result)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
+(defun mh/org-roam-node-sort (candidates source)
+  "Sort org-roam nodes.
+TODO this function isn't perfect. In most cases, headings appear
+before their subheadings (which is what we want), but for example
+'Jackson' doesn't really produce the expected results."
+  (helm-fuzzy-matching-default-sort-fn-1 candidates nil nil nil))
+
 (defun mh/org-roam-node-find ()
   "Personal version of org-roam-node-find."
   (interactive)
@@ -358,7 +365,8 @@ transformed later for appearance."
    :sources (helm-build-sync-source "org-roam-node"
               :candidates 'mh-org-roam-node-cache
               :candidate-number-limit 100
-              :filtered-candidate-transformer 'mh/org-roam-node-find-filtered-candidate-transformer
+              :filtered-candidate-transformer '(mh/org-roam-node-sort
+                                                mh/org-roam-node-find-filtered-candidate-transformer)
               :action 'org-roam-node-visit)
    :buffer "*org-roam-node*"
    :prompt "node: "))
