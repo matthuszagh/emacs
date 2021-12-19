@@ -362,12 +362,19 @@ before their subheadings (which is what we want), but for example
   "Personal version of org-roam-node-find."
   (interactive)
   (helm
-   :sources (helm-build-sync-source "org-roam-node"
-              :candidates 'mh-org-roam-node-cache
-              :candidate-number-limit 100
-              :filtered-candidate-transformer '(mh/org-roam-node-sort
-                                                mh/org-roam-node-find-filtered-candidate-transformer)
-              :action 'org-roam-node-visit)
+   :sources `(,(helm-build-sync-source "org-roam-node"
+                 :candidates 'mh-org-roam-node-cache
+                 :candidate-number-limit 100
+                 :filtered-candidate-transformer '(mh/org-roam-node-sort
+                                                   mh/org-roam-node-find-filtered-candidate-transformer)
+                 :action 'org-roam-node-visit)
+              ;; create new node if none found
+              ,(helm-build-dummy-source "new node"
+                 :action (lambda (node)
+                           (org-roam-capture-
+                            :node (org-roam-node-create :title node)
+                            :templates nil
+                            :props '(:finalize find-file)))))
    :buffer "*org-roam-node*"
    :prompt "node: "))
 
