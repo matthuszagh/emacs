@@ -373,15 +373,12 @@ before their subheadings (which is what we want), but for example
                             :node (org-roam-node-create :title node)
                             :templates nil
                             :props '(:finalize find-file)))))
-   :default (lambda ()
-              (or initial-text
-                  (helm-aif (thing-at-point 'symbol) (regexp-quote it))))
    :buffer "*org-roam-node*"
    :prompt "node: "))
 
 ;; TODO it would probably be better to have a customization that
 ;; allowed customizing this, rather than needing to override it.
-(advice-add 'org-roam-node-read :override 'mh/org-roam-node-read)
+(advice-add 'org-roam-node-read :override #'mh/org-roam-node-read)
 
 (defun mh//maybe-update-org-roam-node-cache ()
   "Update `mh-org-roam-node-cache' if not currently being updated."
@@ -392,7 +389,7 @@ before their subheadings (which is what we want), but for example
 
 ;; Update the org-roam node cache after saving, but don't do it if
 ;; we're already updating the cache.
-(add-hook 'org-roam-mode (lambda ()
+(add-hook 'org-mode-hook (lambda ()
                            (add-hook 'after-save-hook
                                      #'mh//maybe-update-org-roam-node-cache 0 t)))
 
