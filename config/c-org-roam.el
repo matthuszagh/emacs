@@ -351,23 +351,32 @@ transformed later for appearance."
                  (setq mh-org-roam-node-cache result)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
-;; The last thing to do is to update `mh-org-roam-node-cache'
-;; asynchronously, whenever the database changes, and probably to
-;; persist it across sessions.
 (defun mh/org-roam-node-find ()
   "Personal version of org-roam-node-find."
   (interactive)
   (helm
    :sources (helm-build-sync-source "org-roam-node"
-              ;;:init #'mh/update-org-roam-node-cache
               :candidates 'mh-org-roam-node-cache
               :candidate-number-limit 100
               :filtered-candidate-transformer 'mh/org-roam-node-find-filtered-candidate-transformer
-              :action 'org-roam-node-visit
-              ;;:filter-one-by-one #'mh//org-roam-node-find-node-filter
-              )
+              :action 'org-roam-node-visit)
    :buffer "*org-roam-node*"
    :prompt "node: "))
+
+(defun mh//maybe-update-org-roam-node-cache ()
+  "Update `mh-org-roam-node-cache' if not currently being updated."
+  (unless (-find (lambda (x)
+                   (equal "*emacs*" (buffer-name x)))
+                 (buffer-list))
+    (mh/update-org-roam-node-cache-async)))
+
+;; Update the org-roam node cache after saving, but don't do it if
+;; we're already updating the cache.
+(add-hook 'org-roam-mode (lambda ()
+                           (add-hook 'after-save-hook
+                                     #'mh//maybe-update-org-roam-node-cache 0 t)))
+
+;; TODO persist the node cache across sessions.
 
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here
