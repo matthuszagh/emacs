@@ -244,6 +244,7 @@ before their subheadings (which is what we want), but for example
    :sources `(,(helm-build-sync-source "org-roam-node"
                  :candidates 'mh-org-roam-node-cache
                  :candidate-number-limit 100
+                 :candidate-transformer filter-fn
                  :filtered-candidate-transformer '(mh/org-roam-node-sort
                                                    mh/org-roam-node-find-filtered-candidate-transformer))
               ,(helm-build-dummy-source "new node"
@@ -258,6 +259,18 @@ before their subheadings (which is what we want), but for example
 ;; TODO it would probably be better to have a customization that
 ;; allowed customizing this, rather than needing to override it.
 (advice-add 'org-roam-node-read :override #'mh/org-roam-node-read)
+
+(defun mh/org-roam-node-find-todo ()
+  "Search all org-roam nodes labelled TODO."
+  (interactive)
+  (funcall-interactively 'org-roam-node-find
+                         nil
+                         nil
+                         (lambda (nodes)
+                           (-filter (lambda (x)
+                                      (equal "TODO" (org-roam-node-todo (cdr x))))
+                                    nodes))))
+
 
 (defun mh//maybe-update-org-roam-node-cache ()
   "Update `mh-org-roam-node-cache' if not currently being updated."
