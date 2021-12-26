@@ -54,28 +54,29 @@
                "\\ctikzset{*-o/.style = {bipole nodes={circ}{ocirc, fill=bg}}}\n"
                "\\ctikzset{o-*/.style = {bipole nodes={ocirc, fill=bg}{circ}}}\n"))))
 
-(setq org-babel-latex-preamble
-      (lambda (params)
-        (latex-preamble-by-backend params)))
-
-(setq org-babel-latex-begin-env
-      (lambda (_)
-        "\\begin{document}"))
-
-(setq org-babel-latex-end-env
-      (lambda (_)
-        "\\end{document}"))
-
-;; This is used when converting a PDF file to an SVG file during latex
-;; source block evaluation. It is not used for latex
-;; fragments/snippets.
-(setq org-babel-latex-pdf-svg-process
-      ;; I deliberately do not replace the background color with
-      ;; 'none'. This produces undesirable results in cases where the
-      ;; background color must be overlayed onto graphical elements in
-      ;; a background layer (e.g., the legend of a tikz plot).
-      (concat "inkscape --pdf-poppler %f -T -l -o %O"
-              " && sed -i 's/#000000/currentColor/g; s/rgb(0.,0.,0.)/currentColor/g' %O"))
+(custom-set-variables
+ '(org-babel-latex-preamble
+   (lambda (params)
+     (latex-preamble-by-backend params)))
+ '(org-babel-latex-begin-env
+   (lambda (_)
+     "\\begin{document}"))
+ '(org-babel-latex-end-env
+   (lambda (_)
+     "\\end{document}"))
+ ;; This is used when converting a PDF file to an SVG file during
+ ;; latex source block evaluation. It is not used for latex
+ ;; fragments/snippets.
+ `(org-babel-latex-pdf-svg-process
+   ;; I deliberately do not replace the background color with
+   ;; 'none'. This produces undesirable results in cases where the
+   ;; background color must be overlayed onto graphical elements in a
+   ;; background layer (e.g., the legend of a tikz plot).
+   ,(concat "inkscape --pdf-poppler %f "
+            "--export-text-to-path "
+            "--export-plain-svg "
+            "--export-filename=%O"
+            " && sed -i 's/#000000/currentColor/g; s/rgb(0.,0.,0.)/currentColor/g' %O")))
 
 (defun mh//org-src-block-latex-post ()
   ""
