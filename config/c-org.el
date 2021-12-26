@@ -224,6 +224,10 @@
 ;; children.
 (setq org-checkbox-hierarchical-statistics nil)
 
+(setq org-html-with-latex 'html)
+(setq org-latex-to-html-convert-command
+      "latexmlc 'literal:%i' --profile=math --preload=siunitx.sty 2>/dev/null | head -c -1")
+
 (custom-set-variables
  ;; LaTeX preamble for fragments.
  '(org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}

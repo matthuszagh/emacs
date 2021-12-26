@@ -143,9 +143,5 @@
         (:post . (lambda ()
                    (mh//org-src-block-latex-post)))))
 
-(setq org-html-with-latex 'html)
-(setq org-latex-to-html-convert-command
-      "latexmlc 'literal:%i' --profile=math --preload=siunitx.sty 2>/dev/null | head -c -1")
-
 (provide 'c-ob-latex)
 ;;; c-ob-latex.el ends here
