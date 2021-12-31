@@ -22,5 +22,13 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
+(custom-set-variables
+ ;; TODO I think there's a bug in straight.el related to caching
+ ;; autoloads. I frequently get errors when trying to pull or rebuild
+ ;; packages along the lines of 'Could not find package
+ ;; g-ref-autoloads' (for rebuilding org-ref). The "g-ref" seems to be
+ ;; the last characters of "org-ref".
+ `(straight-cache-autoloads nil))
+
 (provide 'c-straight)
 ;;; c-straight.el ends here
