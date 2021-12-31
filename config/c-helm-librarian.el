@@ -16,7 +16,7 @@
 
 ;; TODO this should be located somewhere else, since it doesn't
 ;; actually relate to helm-librarian.
-(defun mh/catalog-entry ()
+(defun mh/librarian-catalog-entry ()
   "Navigate to the catalog entry for a given resource."
   (interactive)
   (let ((filename (buffer-name))
@@ -24,6 +24,15 @@
     (find-file-other-window catalog-file)
     (goto-char 0)
     (search-forward filename)))
+
+(defun mh/librarian-update-catalog ()
+  "Update librarian catalog."
+  (interactive)
+  (start-process-shell-command "librarian-catalog"
+                               "*librarian-catalog*"
+                               (concat librarian-executable
+                                       " -d " librarian-library-directory
+                                       " catalog")))
 
 (provide 'c-helm-librarian)
 
