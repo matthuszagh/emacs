@@ -17,8 +17,10 @@
  'org-babel-load-languages
  '((sagemath . t)))
 
-(setq org-babel-default-header-args:sage '((:session . t)
-                                           (:results . "output")))
+(setq org-babel-default-header-args:sage
+      '((:session . t)
+        (:results . "output")
+        (:cache . "yes")))
 
 (provide 'c-ob-sagemath)
 ;;; c-ob-sagemath.el ends here
