@@ -312,10 +312,6 @@
 ;; working correctly. inputenc and fontenc aren't needed with
 ;; luatex.
 
-;; make clocking efforts persistant across emacs sessions.
-;; see [[info:org#Clocking%20Work%20Time][info:org#Clocking Work Time]]
-(setq org-clock-persist 'history)
-(org-clock-persistence-insinuate)
 ;; Don't automatically attempt to resolve open clocks when
 ;; clocking in. Functionally, this is a nice feature, but it
 ;; creates a significant delay when there are many agenda
