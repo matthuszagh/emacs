@@ -42,11 +42,6 @@
 ;; file changes on disk.
 (global-auto-revert-mode t)
 
-;; Use UTF-8 by default.
-(prefer-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-
 ;; Increase splitting threshold so that new buffers don't split
 ;; existing ones.  TODO improve documentation of this setting.
 (setq split-height-threshold 100)
