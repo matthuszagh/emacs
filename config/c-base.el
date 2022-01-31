@@ -321,5 +321,15 @@ vertical direction."
           (/ (display-pixel-height)
              (* in/mm (display-mm-height))))))
 
+(defun mh/image-exif ()
+  "Print Exif data associated with the image file corresponding to
+the current buffer."
+  (interactive)
+  (let ((file (buffer-file-name)))
+    (start-process-shell-command "exiftool" "*exif*"
+                                 (concat "exiftool "
+                                         file))
+    (display-buffer "*exif*")))
+
 (provide 'c-base)
 ;;; c-base.el ends here
