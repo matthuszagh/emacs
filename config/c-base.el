@@ -326,5 +326,15 @@ the current buffer."
                                          file))
     (display-buffer "*exif*")))
 
+(defun mh/unzip (file)
+  "Uncompress a zip archive in a directory matching the archive name."
+  (interactive "fzip file: ")
+  (let ((file-base-name (file-name-sans-extension file))
+        (file-directory-name (file-name-directory file)))
+    (start-process-shell-command "unzip" "*unzip*"
+                                 (concat "unzip "
+                                         "-d " file-base-name
+                                         " " file))))
+
 (provide 'c-base)
 ;;; c-base.el ends here
