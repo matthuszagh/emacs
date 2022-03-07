@@ -20,6 +20,7 @@
 (setq org-babel-default-header-args:sage
       '((:session . t)
         (:results . "output")
+        (:wrap . "results")
         (:cache . "yes")))
 
 (provide 'c-ob-sagemath)
