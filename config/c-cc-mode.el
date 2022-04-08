@@ -18,10 +18,6 @@
  '(tab-width 8)
  '(c-default-style '((java-mode . "java") (awk-mode . "awk") (other . "linux"))))
 
-(add-hook 'c-mode-common-hook
-          (lambda ()
-            (add-hook 'before-save-hook 'clang-format-buffer nil t)))
-
 (provide 'c-cc-mode)
 
 ;;; c-cc-mode.el ends here

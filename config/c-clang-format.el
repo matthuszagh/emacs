@@ -75,6 +75,10 @@ otherwise assumed alphabetic."
                             ((equal "GNU" base-style)
                              (c-set-style "gnu")))))))))
 
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (add-hook 'before-save-hook 'clang-format-buffer nil t)))
+
 ;; asy-mode inherits from c-mode-common so we must disable clang
 ;; formatting.
 (with-eval-after-load 'asy-mode
