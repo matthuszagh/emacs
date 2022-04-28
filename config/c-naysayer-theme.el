@@ -21,6 +21,8 @@
 ;; family (which is monospace anyway). We therefore unspecify this to
 ;; revert to "Regular".
 (set-face-attribute 'fixed-pitch nil :family "unspecified")
+;; italicize code comments
+(set-face-attribute 'font-lock-comment-face nil :slant 'italic)
 
 ;; This by default uses "burlywood", which is very close to but
 ;; distinct from the default face foreground. This slight difference
