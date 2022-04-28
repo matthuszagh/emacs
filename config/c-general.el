@@ -43,6 +43,13 @@
   :prefix ","
   :non-normal-prefix "C-,")
 
+(general-define-key
+ :states '(emacs normal insert visual motion)
+ ;; `describe-char' can be useful to determine a face used, among
+ ;; other things. However, calling it through the typical means can
+ ;; disrupt this context.
+ "<f9>" 'describe-char)
+
 ;; bindings for programming modes, but agnostic to the
 ;; specific language. e.g. jump to definition
 (general-define-key
