@@ -142,6 +142,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-helm-eww)
 (require 'c-helm-grep)
 (require 'c-helm-librarian)
+(require 'c-helm-librarian-recoll)
 (require 'c-helm-ls-git)
 (require 'c-helm-notmuch)
 (require 'c-helm-org)
