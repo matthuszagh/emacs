@@ -23,6 +23,9 @@
 (set-face-attribute 'fixed-pitch nil :family "unspecified")
 ;; italicize code comments
 (set-face-attribute 'font-lock-comment-face nil :slant 'italic)
+;; Invert the foreground color when highlighting during a match (this
+;; also effects highlighted images), which makes them clearer.
+(set-face-attribute 'show-paren-match nil :foreground (face-background 'default))
 
 ;; This by default uses "burlywood", which is very close to but
 ;; distinct from the default face foreground. This slight difference
