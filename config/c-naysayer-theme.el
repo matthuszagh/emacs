@@ -87,7 +87,14 @@
                           :height 1.0
 			  :background (face-background 'default)
                           :family (face-attribute 'default :family)
-                          :underline t))
+                          :underline t)
+      (set-face-attribute 'helm-buffer-directory nil
+                          :background (face-background 'default)
+                          :foreground (face-foreground 'font-lock-string-face))
+      (set-face-attribute 'helm-buffer-size nil
+                          :foreground (face-foreground 'default))
+      (set-face-attribute 'helm-buffer-process nil
+                          :foreground "grey40"))
   (mh:log-init "ERROR" "attempted to load 'naysayer-theme customizations for 'helm without loading 'helm"))
 
 (provide 'c-naysayer-theme)
