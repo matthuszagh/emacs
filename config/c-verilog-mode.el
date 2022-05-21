@@ -14,6 +14,8 @@
  '(verilog-auto-lineup nil)
  '(c-basic-offset 4)
  '(verilog-auto-endcomments nil)
+ ;; don't automatically insert newlines after colons
+ '(verilog-auto-newline nil)
  '(verilog-linter "verilator –lint-only"))
 
 (provide 'c-verilog-mode)
