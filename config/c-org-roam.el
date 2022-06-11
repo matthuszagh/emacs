@@ -224,19 +224,30 @@ transformed later for appearance."
                  (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
                  (load "~/.config/emacs/config/c-no-littering.el")
                  (load "~/.config/emacs/config/c-org-roam.el")
-                 (org-roam-db-sync)
+                 ;; Minimize the time this update locks the database,
+                 ;; which prevents use.
+                 (let* ((original-file org-roam-db-location)
+                        (org-roam-db-location
+                         (concat (file-name-directory original-file)
+                                 "org-roam.new.db")))
+                   (copy-file original-file org-roam-db-location)
+                   (org-roam-db-sync)
+                   (rename-file org-roam-db-location original-file t))
                  (mh/org-roam-node-candidates))
                (lambda (result)
                  (setq mh-org-roam-node-cache result)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
 (defun mh/org-roam-node-sort (candidates source)
-  "Sort org-roam nodes.
-TODO this function isn't perfect. In most cases, headings appear
-before their subheadings (which is what we want), but for example
-'Jackson' doesn't really produce the expected results."
+  "Sort org-roam nodes."
   (helm-fuzzy-matching-default-sort-fn-1 candidates nil nil nil))
 
+;; TODO mode-line doesn't appear
+;;
+;; TODO the shortest elements don't always appear first. I believe
+;; this is because those nodes are filtered out by
+;; `candidate-number-limit'. I might need to customize matching so
+;; that short nodes are preferred.
 (defun mh/org-roam-node-read (&optional initial-input filter-fn sort-fn require-match)
   "Personal version of `org-roam-node-read'."
   (interactive)
@@ -284,6 +295,9 @@ before their subheadings (which is what we want), but for example
 (add-hook 'org-mode-hook (lambda ()
                            (add-hook 'after-save-hook
                                      #'mh//maybe-update-org-roam-node-cache 0 t)))
+
+;; Update node cache after Emacs initialization.
+(add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)
 
 ;; TODO persist the node cache across sessions.
 
