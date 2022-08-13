@@ -21,20 +21,39 @@ directory."
   (string-match "\\([0-9a-f]\\{40\\}\\)" filepath)
   (match-string 1 filepath))
 
+(defun mh/current-librarian-resource-filename ()
+  "Filename for buffer visiting librarian resource."
+  (mh/librarian-resource
+   (if (eq major-mode 'eww-mode)
+       (eww-current-url)
+     (or (buffer-file-name)
+         (buffer-name)))))
+
+(defun mh/add-librarian-resource-filename-to-kill-ring ()
+  "Add librarian resource filename to kill ring."
+  (interactive)
+  (kill-new (mh/current-librarian-resource-filename)))
+
 ;; TODO this should be located somewhere else, since it doesn't
 ;; actually relate to helm-librarian.
 (defun mh/librarian-catalog-entry ()
   "Navigate to the catalog entry for a given resource."
   (interactive)
-  (let ((resource (mh/librarian-resource
-                   (if (eq major-mode 'eww-mode)
-                       (eww-current-url)
-                     (buffer-file-name))))
+  (let ((resource (mh/current-librarian-resource-filename))
         (catalog-file (concat librarian-library-directory "/catalog.json")))
     (find-file-other-window catalog-file)
     (goto-char 0)
     (search-forward resource)
     (search-backward "{")))
+
+(defun mh/librarian-entry-directory ()
+  "Navigate to the directory for the entry currently visited.
+This can be useful for getting to the actual files of a website
+or similar."
+  (interactive)
+  (find-file (concat librarian-library-directory
+                     "/resources/"
+                     (mh/current-librarian-resource-filename))))
 
 ;; TODO use make-process and associate a sentinel to output a message
 ;; when updating complete.
