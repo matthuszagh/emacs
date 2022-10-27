@@ -78,7 +78,8 @@ or similar."
     ;; update catalog
     (call-process-shell-command (concat librarian-executable
                                         " -d " librarian-library-directory
-                                        " catalog")
+                                        " catalog"
+                                        " --remove-orphans='false'")
                                 nil
                                 buffer-name)
     ;; display a diff
