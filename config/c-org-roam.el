@@ -11,8 +11,6 @@
 (setq org-roam-v2-ack t)
 (require 'org-roam)
 
-(setq org-roam-directory "~/doc/notes/wiki")
-
 ;; (add-hook 'org-roam-mode 'org-roam-db-autosync-mode)
 
 (defun mh//org-update-last-modified ()
@@ -62,7 +60,8 @@
                                                ":NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")\n"
                                                ":END:\n"
                                                "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
-                           :unnarrowed t))))
+                           :unnarrowed t)))
+                      `(org-roam-directory "~/doc/notes/wiki"))
 
 (defface mh-org-roam-node-outline-prefix-face
   '((t :extend t))
@@ -217,6 +216,7 @@ transformed later for appearance."
   (org-roam-db-sync)
   (setq mh-org-roam-node-cache (mh/org-roam-node-candidates)))
 
+;; TODO nodes not updating
 (defun mh/update-org-roam-node-cache-async ()
   "Update mh-org-roam-node-cache asynchronously."
   (interactive)
@@ -230,7 +230,7 @@ transformed later for appearance."
                         (org-roam-db-location
                          (concat (file-name-directory original-file)
                                  "org-roam.new.db")))
-                   (copy-file original-file org-roam-db-location)
+                   (copy-file original-file org-roam-db-location t)
                    (org-roam-db-sync)
                    (rename-file org-roam-db-location original-file t))
                  (mh/org-roam-node-candidates))
