@@ -34,7 +34,10 @@
 Explicit in this context means that it's literally written in the
 file rather than being provided as a default header argument."
   (let* ((elem (org-element-at-point))
-         (elem-header (append (list (org-element-property :parameters elem))
+         (elem-params (org-element-property :parameters elem))
+         (elem-header (append (if elem-params
+                                  (list elem-params)
+                                nil)
                               (org-element-property :header elem)))
          (matchp nil))
     (dolist (elt elem-header)
