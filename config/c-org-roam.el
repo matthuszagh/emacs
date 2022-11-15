@@ -2,6 +2,30 @@
 
 ;;; Commentary:
 
+;; TODO
+;;
+;; Node searching goals:
+;;
+;; - match first on node titles (over outlines)
+;; - prioritize top-level, then first nested level, then 2nd, etc.
+;; - for matches in same level, order by match score
+;; - matching tags should probably involve adding an explicit tag:... in the search.
+;;   This can be added any number of times
+;; - TODO do I want to search outline? There should probably be a special syntax for this
+;; - add state search (e.g., state:TODO). Don't include DONE items by default.
+;;
+;; Better node filtering/finding:
+;;
+;; - Perform search on all nodes. This should sort all nodes in terms
+;;   of a match score.
+;; - First 100 should then be presented.
+;;
+;; TODO do I need to replace `org-roam-db-sync' with?
+;;
+;; (dolist (file (org-roam-list-files))
+;;   (with-current-buffer (find-file-noselect file)
+;;     (org-roam-db-update-file file)))
+
 ;;; Code:
 
 (if (featurep 'straight)
@@ -10,6 +34,8 @@
 ;; this must be set before org-roam is loaded
 (setq org-roam-v2-ack t)
 (require 'org-roam)
+
+(require 'dash)
 
 ;; (add-hook 'org-roam-mode 'org-roam-db-autosync-mode)
 
@@ -238,26 +264,73 @@ transformed later for appearance."
                  (setq mh-org-roam-node-cache result)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
-(defun mh/org-roam-node-sort (candidates source)
-  "Sort org-roam nodes."
-  (helm-fuzzy-matching-default-sort-fn-1 candidates nil nil nil))
+(defun mh//org-roam-node-candidate-predicate (candidate)
+  ""
+  (let ((node (cdr candidate)))
+    ;; TODO
+    ;; - consider aliases
+    (helm-mm-3-match (org-roam-node-title node))))
+
+(defun mh//org-roam-node-candidate-filter (candidates)
+  ""
+  (-filter 'mh//org-roam-node-candidate-predicate candidates))
+
+(defun mh//org-roam-node-candidate-comparator (candidate1 candidate2)
+  ""
+  ;; TODO
+  ;; - consider aliases
+  (let* ((node1 (cdr candidate1))
+         (node2 (cdr candidate2))
+         (level1 (org-roam-node-level node1))
+         (level2 (org-roam-node-level node2)))
+    (if (< level1 level2)
+        t
+      (if (> level1 level2)
+          nil
+        (let ((title1 (org-roam-node-title node1))
+              (title2 (org-roam-node-title node2)))
+          (> (helm-score-candidate-for-pattern title1 helm-pattern)
+             (helm-score-candidate-for-pattern title2 helm-pattern)))))))
+
+(defun mh//org-roam-node-candidate-sort (candidates)
+  ""
+  (-sort 'mh//org-roam-node-candidate-comparator candidates))
+
+(defun mh//org-roam-node-candidates ()
+  ""
+  (let ((candidates mh-org-roam-node-cache))
+    (--> candidates
+         mh//org-roam-node-candidate-filter
+         mh//org-roam-node-candidate-sort)))
+
 
 ;; TODO mode-line doesn't appear
 ;;
 ;; TODO the shortest elements don't always appear first. I believe
 ;; this is because those nodes are filtered out by
 ;; `candidate-number-limit'. I might need to customize matching so
-;; that short nodes are preferred.
+;; that short nodes are preferred. I think the reason is actually a
+;; little different. Shorter candidates are only preferred when they
+;; produce an exact score tie with
+;; `helm-fuzzy-matching-default-sort-fn-1'. I think I may need to
+;; provide my own custom fuzzy matching to some extent. I need several
+;; behaviors:
+;;
+;; - suppression of all nodes under a matching node. subnodes that
+;;   also match should still be displayed though
+;; - matching performed before candidate limiting
+
 (defun mh/org-roam-node-read (&optional initial-input filter-fn sort-fn require-match)
   "Personal version of `org-roam-node-read'."
   (interactive)
   (helm
    :sources `(,(helm-build-sync-source "org-roam-node"
-                 :candidates 'mh-org-roam-node-cache
+                 :candidates 'mh//org-roam-node-candidates
                  :candidate-number-limit 100
                  :candidate-transformer filter-fn
-                 :filtered-candidate-transformer '(mh/org-roam-node-sort
-                                                   mh/org-roam-node-find-filtered-candidate-transformer))
+                 :requires-pattern 1
+                 :match-dynamic t
+                 :filtered-candidate-transformer '(mh/org-roam-node-find-filtered-candidate-transformer))
               ,(helm-build-dummy-source "new node"
                  :action (lambda (node)
                            (org-roam-capture-
@@ -265,7 +338,8 @@ transformed later for appearance."
                             :templates nil
                             :props '(:finalize find-file)))))
    :buffer "*org-roam-node*"
-   :prompt "node: "))
+   :prompt "node: "
+   :input initial-input))
 
 ;; TODO it would probably be better to have a customization that
 ;; allowed customizing this, rather than needing to override it.
