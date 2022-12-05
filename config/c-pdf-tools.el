@@ -24,6 +24,11 @@
  ;; disable line wrapping in PDF outlines
  '(pdf-outline-fill-column nil))
 
+;; truncate long lines in pdf-outline
+(add-hook 'pdf-outline-buffer-mode-hook
+          (lambda ()
+            (toggle-truncate-lines 1)))
+
 (defun mh//pdf-view--rotate (&optional counterclockwise-p page-p)
   "Rotate PDF 90 degrees. Requires pdftk to work.\n
 Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
