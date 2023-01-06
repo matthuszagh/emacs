@@ -336,5 +336,13 @@ the current buffer."
                                          "-d '" file-base-name
                                          "' '" file "'"))))
 
+(defun mh/zip (file)
+  "Create a zip archive matching the file name."
+  (interactive "ffile: ")
+  (start-process-shell-command "zip" "*zip*"
+                               (concat "zip "
+                                       "-r '" file ".zip'"
+                                       " '" file "'")))
+
 (provide 'c-base)
 ;;; c-base.el ends here
