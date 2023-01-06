@@ -333,8 +333,8 @@ the current buffer."
         (file-directory-name (file-name-directory file)))
     (start-process-shell-command "unzip" "*unzip*"
                                  (concat "unzip "
-                                         "-d " file-base-name
-                                         " " file))))
+                                         "-d '" file-base-name
+                                         "' '" file "'"))))
 
 (provide 'c-base)
 ;;; c-base.el ends here
