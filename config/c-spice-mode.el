@@ -9,5 +9,7 @@
 
 (require 'spice-mode)
 
+(cl-pushnew '("\\.mod\\'" . spice-mode) auto-mode-alist)
+
 (provide 'c-spice-mode)
 ;;; c-spice-mode.el ends here
