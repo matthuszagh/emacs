@@ -18,6 +18,8 @@
                                      :keymaps 'local
                                      "d" (lambda ()
                                            (call-interactively 'mh/insert-current-date)))))
+(add-hook 'git-rebase-mode-hook (lambda ()
+                                  (outline-minor-mode -1)))
 
 (setq magit-repository-directories '(("~/src" . 10)))
 (setq magit-restore-window-configuration t)
