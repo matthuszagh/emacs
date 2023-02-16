@@ -146,6 +146,17 @@ TODO this should be extended to other paper sizes."
          (target-width (* a4-width-in (car (mh/dpi)))))
     (pdf-view-enlarge (/ target-width current-width))))
 
+
+(defun mh/ocr-current-buffer-pdf ()
+  "OCR PDF in current buffer."
+  (interactive)
+  (let ((path (buffer-file-name)))
+    (start-process-shell-command
+     "ocr-pdf"
+     "*ocrmypdf*"
+     (concat "ocrmypdf -s --max-image-mpixels=1000000000 "
+             path " " path))))
+
 (provide 'c-pdf-tools)
 
 ;;; c-pdf-tools.el ends here
