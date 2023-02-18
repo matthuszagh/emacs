@@ -30,9 +30,26 @@
 (setq message-auto-save-directory "~/mail/draft")
 (setq message-kill-buffer-on-exit t)
 ;; change the directory to store the sent mail
-(setq message-directory "~/mail/")
+(setq message-directory "~/mail")
 ;; display newest messages first
 (setq notmuch-search-oldest-first nil)
+
+(defun mh//outgoing-blacklist-check ()
+  "Prevent sending mail to certain email addresses."
+  (let ((email-list '("jonathan.canuck.levine@gmail.com"))
+        (to (or (message-field-value "To") ""))
+        (cc (or (message-field-value "Cc") ""))
+        (bcc (or (message-field-value "Bcc") "")))
+    (dolist (email email-list)
+      (if (or (string-match email to)
+              (string-match email cc)
+              (string-match email bcc))
+          (progn
+            (message (concat email " is blacklisted for outbound messages."
+                             " Not sending."))
+            (keyboard-quit))))))
+
+(add-hook 'message-send-hook #'mh//outgoing-blacklist-check)
 
 (provide 'c-notmuch)
 ;;; c-notmuch.el ends here
