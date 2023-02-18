@@ -51,5 +51,12 @@
 
 (add-hook 'message-send-hook #'mh//outgoing-blacklist-check)
 
+(defun mh//verify-email-send ()
+  "Prompt for verification before sending an email."
+  (or (yes-or-no-p "Are you sure reply-all is suitable? ")
+      (keyboard-quit)))
+
+(add-hook 'message-send-hook #'mh//verify-email-send)
+
 (provide 'c-notmuch)
 ;;; c-notmuch.el ends here
