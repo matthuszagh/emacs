@@ -36,7 +36,7 @@
 
 (defun mh//outgoing-blacklist-check ()
   "Prevent sending mail to certain email addresses."
-  (let ((email-list '("jonathan.canuck.levine@gmail.com"))
+  (let ((email-list '())
         (to (or (message-field-value "To") ""))
         (cc (or (message-field-value "Cc") ""))
         (bcc (or (message-field-value "Bcc") "")))
@@ -51,6 +51,26 @@
 
 (add-hook 'message-send-hook #'mh//outgoing-blacklist-check)
 ;;(remove-hook 'message-send-hook #'mh//outgoing-blacklist-check)
+
+(defun mh//jonathan-levine-blacklist-check ()
+  "Prevent sending emails to Jonathan Levine and Data I/O group simultaneously."
+  (let ((jonathan-email "jonathan.canuck.levine@gmail.com")
+        (dataio-group-email "DataioEPROM@groups.io")
+        (to (or (message-field-value "To") ""))
+        (cc (or (message-field-value "Cc") ""))
+        (bcc (or (message-field-value "Bcc") "")))
+    (if (and (or (string-match jonathan-email to)
+                 (string-match jonathan-email cc)
+                 (string-match jonathan-email bcc))
+             (or (string-match dataio-group-email to)
+                 (string-match dataio-group-email cc)
+                 (string-match dataio-group-email bcc)))
+        (progn
+          (message "Don't email Jonathan and Data I/O group simultaneously.")
+          (keyboard-quit)))))
+
+(add-hook 'message-send-hook #'mh//jonathan-levine-blacklist-check)
+;;(remove-hook 'message-send-hook #'mh//jonathan-levine-blacklist-check)
 
 (defun mh//verify-email-send ()
   "Prompt for verification before sending an email."
