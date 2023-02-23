@@ -50,6 +50,7 @@
             (keyboard-quit))))))
 
 (add-hook 'message-send-hook #'mh//outgoing-blacklist-check)
+;;(remove-hook 'message-send-hook #'mh//outgoing-blacklist-check)
 
 (defun mh//verify-email-send ()
   "Prompt for verification before sending an email."
