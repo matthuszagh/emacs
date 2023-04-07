@@ -190,6 +190,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-x86-lookup)
 (require 'c-yaml-mode)
 (require 'c-async)
+(require 'c-tree-sitter)
 
 ;; completions
 (require 'c-company)
