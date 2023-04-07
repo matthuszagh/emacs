@@ -16,8 +16,7 @@
   (setq python-shell-interpreter "python")
   (setq python-shell-interpreter-args "")
   (setq python-shell-prompt-detect-failure-warning nil)
-  (add-to-list 'same-window-buffer-names "*Python*")
-  (setq python-fill-docstring-style 'django))
+  (add-to-list 'same-window-buffer-names "*Python*"))
 
 (provide 'c-python)
 ;;; c-python.el ends here
