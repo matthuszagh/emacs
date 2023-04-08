@@ -549,9 +549,9 @@ TODO this works but is slow."
   "Insert an inline image at point from FILE into an Org buffer."
   (interactive "fFile: ")
   (insert
-   (concat "#+ATTR_ORG: :width 1000\n"
-           "#+ATTR_HTML: :width 100%\n"
-           "#+NAME: fig:\n"
+   (concat "#+ATTR_ORG: :width\n"
+           "#+ATTR_HTML: :width\n"
+           "#+NAME: fig:" (file-name-base file) "\n"
            "[[file:"
            (file-relative-name file)
            "]]"))
