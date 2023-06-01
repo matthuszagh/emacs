@@ -227,6 +227,18 @@
                             " ; echo ''"))))
     (insert output)))
 
+(defun mh/insert-rand-hex-string-at-point (len)
+  "Insert random hex string at point.  LEN is the length."
+  (interactive "nlength: \n")
+  ;; head /dev/urandom | tr -dc a-f0-9 | head -c len ; echo -n ''
+  (let ((output ""))
+    (setq output (shell-command-to-string
+                  (concat "head /dev/urandom | tr -dc a-f0-9 "
+                          "| head -c "
+                          (number-to-string len)
+                          " ; echo -n ''")))
+    (insert output)))
+
 (defun mh/clear-image-cache ()
   "Sometimes Emacs shows the wrong image when it thinks an image
 hasn't changed. This clears the image cache to prevent this."
