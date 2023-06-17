@@ -29,51 +29,56 @@
           (lambda ()
             (toggle-truncate-lines 1)))
 
-(defun mh//pdf-view--rotate (&optional counterclockwise-p page-p)
-  "Rotate PDF 90 degrees. Requires pdftk to work.\n
-Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
-non-nil for the other direction.  Rotate the whole document by
-default; set PAGE-P to non-nil to rotate only the current page.
-\nWARNING: overwrites the original file, so be careful!"
-  ;; error out when pdftk is not installed
+(defun mh/pdf-rotate (dir)
+  "Rotate PDF page in current buffer according to DIR.
+This overwrites the current file."
+  (interactive "MRotation direction (l|r|d): ")
   (if (null (executable-find "pdftk"))
       (error "Rotation requires pdftk")
-    ;; only rotate in pdf-view-mode
-    (when (eq major-mode 'pdf-view-mode)
-      (let* ((rotate (if counterclockwise-p "left" "right"))
-             (file   (format "\"%s\"" (pdf-view-buffer-file-name)))
-             (page   (pdf-view-current-page))
-             (pages  (cond ((not page-p)                        ; whole doc?
-                            (format "1-end%s" rotate))
-                           ((= page 1)                          ; first page?
-                            (format "%d%s %d-end"
-                                    page rotate (1+ page)))
-                           ((= page (pdf-info-number-of-pages)) ; last page?
-                            (format "1-%d %d%s"
-                                    (1- page) page rotate))
-                           (t                                   ; interior page?
-                            (format "1-%d %d%s %d-end"
-                                    (1- page) page rotate (1+ page))))))
-        ;; empty string if it worked
-        (if (string= "" (shell-command-to-string
-                         (format (concat "pdftk %s cat %s "
-                                         "output %s.NEW "
-                                         "&& mv %s.NEW %s")
-                                 file pages file file file)))
-            (pdf-view-revert-buffer nil t)
-          (error "Rotation error!"))))))
-
-(defun mh/pdf-view-rotate-clockwise (&optional arg)
-  "Rotate PDF page 90 degrees clockwise.  With prefix ARG, rotate
-entire document."
-  (interactive "P")
-  (mh//pdf-view--rotate nil (not arg)))
-
-(defun mh/pdf-view-rotate-counterclockwise (&optional arg)
-  "Rotate PDF page 90 degrees counterclockwise.  With prefix ARG,
-rotate entire document."
-  (interactive "P")
-  (mh//pdf-view--rotate :counterclockwise (not arg)))
+    (if (not (eq major-mode 'pdf-view-mode))
+        (error "Must be in pdf-view-mode")
+      ;; translate direction into degrees and ensure valid argument given
+      (let ((rotate (if (string-equal dir "l") 270
+                      (if (string-equal dir "r") 90
+                        (if (string-equal dir "d") 180
+                          (error "Invalid rotation direction")))))
+            (file (pdf-view-buffer-file-name))
+            (page (pdf-view-current-page))
+            (metadata-file (make-temp-file (temporary-file-directory)))
+            (new-pdf (make-temp-file (temporary-file-directory))))
+        ;; dump current metadata
+        (shell-command-to-string (concat "pdftk "
+                                         file " "
+                                         "dump_data output "
+                                         metadata-file))
+        ;; find the current rotation and add the desired rotation
+        (with-current-buffer (find-file metadata-file)
+          (let ((base-match (concat "PageMediaNumber: " (number-to-string page) "\n"
+                                    "PageMediaRotation: ")))
+            (re-search-forward (concat base-match "\\([0-9]+\\)"))
+            (let ((rotation (string-to-number (match-string-no-properties 1))))
+              (replace-match (concat base-match (number-to-string (mod (+ rotation rotate)
+                                                                       360))))))
+          (save-buffer))
+        ;; create new pdf with rotation applied, and then overwrite the original file
+        (shell-command-to-string (concat "pdftk "
+                                         file " "
+                                         "update_info "
+                                         metadata-file " "
+                                         "output "
+                                         new-pdf))
+        (rename-file new-pdf file t)
+        ;; reopen file
+        (find-file file)
+        ;; cleanup temporary files
+        (kill-buffer (get-file-buffer metadata-file))
+        (delete-file metadata-file)))))
+        (rename-file new-pdf file t)
+        ;; reopen file
+        (find-file file)
+        ;; cleanup temporary files
+        (kill-buffer (get-file-buffer metadata-file))
+        (delete-file metadata-file)))))
 
 (defun mh/pdf-outline-to-k2pdfopt-input ()
   "Take an existing PDF outline and generate an equivalent input in the format expected by k2pdfopt.
