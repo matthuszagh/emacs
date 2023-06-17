@@ -73,6 +73,36 @@ This overwrites the current file."
         ;; cleanup temporary files
         (kill-buffer (get-file-buffer metadata-file))
         (delete-file metadata-file)))))
+
+(defun mh/pdf-remove-carriage-returns-from-bookmarks ()
+  "Return all instances of carriage returns in the current PDF
+bookmarks and then overwrite the PDF."
+  (interactive)
+  (if (null (executable-find "pdftk"))
+      (error "Rotation requires pdftk")
+    (if (not (eq major-mode 'pdf-view-mode))
+        (error "Must be in pdf-view-mode")
+      (let ((file (pdf-view-buffer-file-name))
+            (metadata-file (make-temp-file (temporary-file-directory)))
+            (new-pdf (make-temp-file (temporary-file-directory))))
+        ;; dump current metadata
+        (shell-command-to-string (concat "pdftk "
+                                         file " "
+                                         "dump_data output "
+                                         metadata-file))
+        ;; remove carriage return
+        (with-current-buffer (find-file metadata-file)
+          (while (search-forward "\r" nil t)
+            (replace-match "" nil t))
+          (save-buffer))
+        ;; create new pdf with carriage returns removed, and then
+        ;; overwrite the original file
+        (shell-command-to-string (concat "pdftk "
+                                         file " "
+                                         "update_info "
+                                         metadata-file " "
+                                         "output "
+                                         new-pdf))
         (rename-file new-pdf file t)
         ;; reopen file
         (find-file file)
