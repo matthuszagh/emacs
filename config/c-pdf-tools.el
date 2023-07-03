@@ -192,6 +192,26 @@ TODO this should be extended to other paper sizes."
      (concat "ocrmypdf -s --max-image-mpixels=1000000000 "
              path " " path))))
 
+(defun mh/ocr-current-buffer-pdf (redo-ocr)
+  "OCR PDF in current buffer.
+TODO add a filter so C-M is replaced with newline."
+  (interactive
+   (list (read-string "Redo OCR? (y/n, default n): " nil nil "n")))
+  (let* ((path (buffer-file-name))
+         (redo-ocr-flag (if (string-equal redo-ocr "y")
+                            "--redo-ocr"
+                          (if (string-equal redo-ocr "n")
+                              "-s"
+                            (error "Must answer 'y' or 'n' to redo OCR"))))
+         (buffer "*ocrmypdf*")
+         (cmd (concat "ocrmypdf " redo-ocr-flag " --max-image-mpixels=1000000000 "
+                      "'" path "' '" path "'")))
+    (get-buffer-create buffer)
+    (with-current-buffer buffer
+      (erase-buffer)
+      (insert (concat cmd "\n")))
+    (start-process-shell-command "ocr-pdf" buffer cmd)))
+
 (provide 'c-pdf-tools)
 
 ;;; c-pdf-tools.el ends here
