@@ -35,10 +35,19 @@ If a package provides configuration that only makes sense when another package i
 Don't attempt to provide a configuration for every feature provided by every package. This is too granular, will make it difficult to find what you're looking for and may cause breakages when packages undergo internal reorganization. I think there are cases where this can be useful. For instance, org-babel, which has a lot of configuration and is easy enough to remember. But helm for instance has over 60 files...
 
 * structure
+:PROPERTIES:
+:ID:       75d4344f-2b36-4198-904b-5cc3e77da88f
+:END:
 ~init.el~ performs basic setup and then loads configuration files from the ~config~ subdirectory. Configurations are organized thematically to make related configurations easier to find. All directories (recursively) within the ~config~ directory will be added to the load-path. All configuration files are named ~c-XXX.el~, where ~XXX~ is some string. Each package has its own configuration file named directly after the package. This also true for built-in packages since (1) it's often difficult to remember whether a package is shipped with Emacs or not, and (2) because the relevant point here is that configurations for each package are stored in the same location and thus easy to find and associate. I.e., the configurations for org are placed in ~c-org.el~. Additionally, each subdirectory of ~config~ contains a file named ~c-XXX-base.el~. These files load the desired configuration files within their subdirectories and perform package agnostic configurations.
 
 ** configurations that apply to more than one package
+:PROPERTIES:
+:ID:       bb328f1c-1110-40e2-8285-ada47371dc5a
+:END:
 *** keybindings
+:PROPERTIES:
+:ID:       28274b2f-ffc2-4381-b37b-96a040248639
+:END:
 Keybinding configurations should be placed in the configuration file for the package that sets the keybindings. This should be guarded such that it's only loaded if the relevant other package has been provided. If that is not the case, log a message to the init log. For example (in ~config-general.el~):
 
 #+begin_src emacs-lisp :eval no
@@ -52,13 +61,25 @@ Keybinding configurations should be placed in the configuration file for the pac
 This is preferred over ~with-eval-after-load~ since we should be loading keybindings after other packages.
 
 *** theme configurations
+:PROPERTIES:
+:ID:       e2060df0-4a93-4cbc-b4fc-2575bbd9f683
+:END:
 Place theme-related configuration settings in the theme package configuration file.
 
 * rules
+:PROPERTIES:
+:ID:       e0ab87f6-a0e2-4905-98af-6e96ff5a8424
+:END:
 ** avoid use-package
+:PROPERTIES:
+:ID:       e40d97ec-d5c6-4b6f-9f88-da9b1d6f76c2
+:END:
 The organizational benefits are largely provided by the per-package configuration file. Additionally, ~use-package~ has some downsides, such as incompatibility with Edebug.
 
 ** load order
+:PROPERTIES:
+:ID:       38897b14-e3ee-41d6-ae32-dc7bf2992343
+:END:
 Prefer errors for signaling invalid load order, than handling the error with ~with-eval-after-load~. While ~with-eval-after-load~ has its place, it's typically useful to know when you're loading things in the wrong order.
 
 For example,
@@ -68,3 +89,17 @@ For example,
              (featurep 'company))
   (error "Attempted to load 'slime-company' before 'slime' and 'company': reorganize init file"))
 #+end_src
+
+* operation
+:PROPERTIES:
+:ID:       c2c4c04f-5589-4247-bd0b-f99958259184
+:END:
+** org
+:PROPERTIES:
+:ID:       79470480-4489-4b21-8bcc-71e72e9007e4
+:END:
+*** latex source blocks
+:PROPERTIES:
+:ID:       984dcbb3-bbc8-4735-b6db-f2b23e5c4eaa
+:END:
+Use :_image for latex source blocks that should generate an image (such as via tikz or pgfplots). Otherwise, leave this out and a math environment will be inferred.
