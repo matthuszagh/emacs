@@ -7,7 +7,7 @@
 (if (featurep 'straight)
     (straight-use-package 'exwm))
 
-(setq exwm-workspace-number 2)
+(setq exwm-workspace-number 3)
 (setq mh--exwm-window-pixel-delta 100)
 (defun mh/exwm-enlarge ()
   (interactive)
@@ -109,10 +109,11 @@
           (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI2")))
       (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
           (progn
-            (setq exwm-randr-workspace-monitor-plist '(0 "DisplayPort-0" 1 "DisplayPort-1"))
+            (setq exwm-randr-workspace-monitor-plist '(0 "DisplayPort-0" 1 "DisplayPort-1" 2 "DisplayPort-2"))
             (start-process-shell-command
-             "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate left"
-                                  " --output DisplayPort-1 --right-of DisplayPort-0 --rotate left")))))))
+             "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate left --pos 0x0"
+                                  " --output DisplayPort-1 --rotate left --pos 2160x0"
+                                  " --output DisplayPort-2 --pos 0x3840")))))))
 
 (exwm-change-screen-hook)
 (add-hook 'exwm-init-hook 'exwm-change-screen-hook)
