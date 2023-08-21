@@ -64,9 +64,14 @@
  :prefix-command 'mh/command-prog-prefix
  :prefix-map 'mh/prefix-prog-map)
 
+(if (featurep 'c-switch-window)
+    (general-define-key
+     :keymaps 'mh/prefix-map
+     "w" 'switch-window))
+
 (general-define-key
  :keymaps 'mh/prefix-map
- :prefix "w"
+ :prefix "W"
  :prefix-command 'mh/command-window-prefix
  :prefix-map 'mh/prefix-window-map
  "h" 'evil-window-left
