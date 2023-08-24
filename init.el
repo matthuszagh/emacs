@@ -92,6 +92,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-json-mode)
 (require 'c-langtool)
 (require 'c-switch-window)
+(require 'c-tzc)
 
 ;; lsp
 (require 'c-lsp-mode)
