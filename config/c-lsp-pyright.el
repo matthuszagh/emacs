@@ -7,10 +7,14 @@
 (if (featurep 'straight)
     (straight-use-package '(lsp-pyright :host github :repo "emacs-lsp/lsp-pyright")))
 
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
+(require 'lsp-pyright)
+
+(add-hook 'python-mode (lambda ()
                          (require 'lsp-pyright)
-                         (lsp))))
+                         (lsp)))
+
+(custom-set-variables
+ '(lsp-pyright-python-executable-cmd "python3"))
 
 (provide 'c-lsp-pyright)
 
