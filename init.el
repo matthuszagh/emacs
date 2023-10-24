@@ -193,6 +193,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-yaml-mode)
 (require 'c-async)
 (require 'c-tree-sitter)
+(require 'c-indent-bars)
 
 ;; completions
 (require 'c-company)
