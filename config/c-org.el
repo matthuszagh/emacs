@@ -27,8 +27,20 @@
 ;; place archives in the current file under the top-level 'archive' headline
 (setq org-archive-location "::* archive")
 
-;; hide emphasis markers
-(setq org-hide-emphasis-markers t)
+(custom-set-variables
+ ;; Remove all emphasis markers. Strikethrough is annoying when using
+ ;; '+' in math, '/' and '~' which mess up paths, and I've had issues
+ ;; with underline '_' as well. Finally, I don't use the others and I
+ ;; think Org did a poor job with their emphasis marker choice.
+ '(org-emphasis-alist nil)
+ ;; Collapse/shrink all tables on startup
+ '(org-startup-shrink-all-tables t)
+ ;; Don't hide emphasis markers. For some reason, these are still
+ ;; hidden even when they're disabled.
+ '(org-hide-emphasis-markers nil)
+ '(org-latex-regexps
+   ;; only use \(\) for latex fragment delimiters
+   '(("\\(" "\\\\([^\000]*?\\\\)" 0 nil))))
 
 (defun org-summary-todo (n-done n-not-done)
   "Switch entry to DONE when all subentries are done, to TODO otherwise."
