@@ -40,7 +40,14 @@
  '(org-hide-emphasis-markers nil)
  '(org-latex-regexps
    ;; only use \(\) for latex fragment delimiters
-   '(("\\(" "\\\\([^\000]*?\\\\)" 0 nil))))
+   '(("\\(" "\\\\([^\000]*?\\\\)" 0 nil)))
+ ;; Disable lining up values in property drawers. The default value is
+ ;; "%-10s %s". There are property keys that are longer than 10
+ ;; characters, so using this value doesn't line them up anyway. And,
+ ;; any time you add a property longer than the current max property,
+ ;; you'd need to change this value and update all drawers. Finally, I
+ ;; don't see much of a benefit to lining up values.
+ '(org-property-format "%s %s"))
 
 (defun org-summary-todo (n-done n-not-done)
   "Switch entry to DONE when all subentries are done, to TODO otherwise."
