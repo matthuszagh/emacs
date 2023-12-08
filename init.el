@@ -194,6 +194,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-async)
 (require 'c-tree-sitter)
 (require 'c-indent-bars)
+(require 'c-csv-mode)
 
 ;; completions
 (require 'c-company)
