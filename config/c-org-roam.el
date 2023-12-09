@@ -61,7 +61,7 @@
                            :if-new
                            ;; slug is a suitable converted filename (e.g. spaces
                            ;; converted to underscores)
-                           (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                           (file+head "${slug}.org"
                                       ,(concat ":PROPERTIES:\n"
                                                ":ID: %(org-id-new)\n"
                                                ":END:\n"
@@ -72,7 +72,7 @@
                            :unnarrowed t)
                           ("r" "ref" plain ""
                            :if-new
-                           (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                           (file+head "${slug}.org"
                                       ,(concat ":PROPERTIES:\n"
                                                ":ID: %(org-id-new)\n"
                                                ":ROAM_REFS: cite:${citekey}\n"
