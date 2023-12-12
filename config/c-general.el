@@ -344,7 +344,7 @@
         "p" 'org-set-property
         "t" 'org-todo
         "e" 'org-edit-special
-        "c" 'org-ctrl-c-ctrl-c
+        "c" 'org-ref-cite-insert-helm
         "P" 'org-priority
         "L" 'org-latex-preview
         "z" 'mh/command-org-tex-insert-prefix
