@@ -106,10 +106,18 @@ Taken from https://stackoverflow.com/a/16247032/5710525."
   (interactive)
   (org-map-entries 'org-id-get-create))
 
-;; Add the ID property to all headings in the current file before saving.
+;; For wiki files, add the ID property to all headings in the current
+;; file before saving. The automatic ID feature is useful because it
+;; allows headings to be registered as nodes and easy to find. This
+;; benefit is not present for org files outside the wiki and adding a
+;; property drawer to every heading adds visual clutter.
 (add-hook 'org-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook 'mh/org-add-ids-to-headlines-in-file nil 'local)))
+            (if buffer-file-name
+                (let ((curr-file-dir (substring (file-name-directory buffer-file-name) 0 -1))
+                      (wiki-dir (expand-file-name org-roam-directory)))
+                  (if (string-equal curr-file-dir wiki-dir)
+                      (add-hook 'before-save-hook 'mh/org-add-ids-to-headlines-in-file nil 'local))))))
 
 (defun mh/org-roam-node-full-path (node)
   "Org-roam NODE outline path, including the appended title."
