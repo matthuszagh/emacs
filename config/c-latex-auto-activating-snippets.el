@@ -12,6 +12,12 @@
 
 (require 'laas)
 
+(defun mh/maybe-org-latex-math-p ()
+  "Basically `mh/org-latex-math-p' but can handle cases in which we're not in `org-mode'."
+  (if (eq major-mode 'org-mode)
+      (mh/org-latex-math-p)
+    (texmathp)))
+
 (if (featurep 'org)
     (progn
       ;; expand "//" into frac
@@ -29,7 +35,7 @@
       ;; custom math snippets
       (let ((math-snippets
              (list
-              :cond #'texmathp
+              :cond #'mh/maybe-org-latex-math-p
               "case" (lambda ()
               	       (interactive)
                        (yas-expand-snippet (concat "\\begin{cases}\n"
@@ -40,11 +46,11 @@
                      (yas-expand-snippet (concat "\\begin{bmatrix}\n"
                                                  "    $1\n"
                                                  "  \\end{bmatrix}$0")))
-              "dt" (lambda ()
-                     (interactive)
-                     (yas-expand-snippet (concat "\\begin{vmatrix}\n"
-                                                 "    $1\n"
-                                                 "  \\end{vmatrix}$0")))
+              ;; "dt" (lambda ()
+              ;;        (interactive)
+              ;;        (yas-expand-snippet (concat "\\begin{vmatrix}\n"
+              ;;                                    "    $1\n"
+              ;;                                    "  \\end{vmatrix}$0")))
               "bf" (lambda ()
                      (interactive)
                      (yas-expand-snippet (concat "\\mathbf{$1}$0")))

@@ -6,6 +6,13 @@
 
 (require 'proced)
 
+(custom-set-variables
+ ;; Auto update by default. This can be disabled with
+ ;; `proced-toggle-auto-update'.
+ `(proced-auto-update-flag t)
+ ;; Set proced auto update interval to 1s.
+ `(proced-auto-update-interval 1))
+
 (defun mh/strace-pid-proced (expr)
   ""
   (interactive

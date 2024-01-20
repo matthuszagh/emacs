@@ -5,7 +5,9 @@
 ;;; Code:
 
 (if (featurep 'straight)
-    (straight-use-package 'forge))
+  (progn
+    ;;(straight-use-package '(emacsql :type git :host github :repo "magit/emacsql"))
+    (straight-use-package 'forge)))
 
 (require 'forge)
 (add-hook 'forge-post-mode (lambda ()

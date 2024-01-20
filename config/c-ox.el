@@ -46,5 +46,9 @@
 ;; don't trigger error for broken links during export
 (setq org-export-with-broken-links t)
 
+;; TODO function to export as backend
+;; (let ((org-export-current-backend 'latex))
+;;   (funcall-interactively 'org-ctrl-c-ctrl-c))
+
 (provide 'c-ox)
 ;;; c-ox.el ends here

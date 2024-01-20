@@ -75,6 +75,14 @@ otherwise assumed alphabetic."
                             ((equal "GNU" base-style)
                              (c-set-style "gnu")))))))))
 
+(defun mh/clang-format-git-diff ()
+  "Run clang-format-diff for git project corresponding to current buffer file."
+  (interactive)
+  (let ((exec (executable-find "clang-format-diff")))
+    (if (not exec)
+        (message "clang-format-diff not found")
+      (shell-command "git diff -U0 --no-color HEAD^ | clang-format-diff -i"))))
+
 (add-hook 'c-mode-common-hook
           (lambda ()
             (add-hook 'before-save-hook 'clang-format-buffer nil t)))

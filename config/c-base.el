@@ -82,12 +82,7 @@
 (setq warning-suppress-types '((undo discard-info)))
 
 ;; enable visual-line-mode in non-programming modes
-(add-hook 'text-mode-hook
-          (lambda ()
-            ;; TeX modes are derived from text-mode, but we prefer
-            ;; to treat TeX-mode like a programming mode.
-            (if (not TeX-mode-p)
-                (visual-line-mode))))
+(add-hook 'text-mode-hook #'visual-line-mode)
 
 ;; TODO this makes many rust files executable which shouldn't be.
 ;; ;; automatically make relevant files executable
@@ -106,6 +101,24 @@
 ;; this is a consistent size and does not depend on the screen
 ;; resolution.
 (defconst mh-font-size 9)
+;;(defun mh/font-size-pt ()
+;;  "Calculate an appropriate font size for the current screen."
+;;  (let ((screen-diagonal-in (/ (sqrt (+ (expt (display-mm-width) 2)
+;;                                        (expt (display-mm-height) 2)))
+;;                               25.4))
+;;        ;; assume laptop viewing distance is 13 in.
+;;        (viewing-distance 13)
+;;        ;; angle corresponding to half the height of a line
+;;        (angle (/ 1 416)))
+;;    ;; laptop screens assumed to be < 25 in.
+;;    (if (> screen-diagonal-in 25)
+;;        (setq viewing-distance 26))))
+
+;;(set-frame-font (font-spec
+;;                 :family "Source Code Pro"
+;;                 :foundry "ADBO"
+;;                 :spacing 100 ; mono-spacing
+;;                 :size ))
 (add-to-list 'default-frame-alist
              `(font . ,(concat mh-font "-" (number-to-string mh-font-size))))
 
@@ -137,6 +150,11 @@
 ;; depth.
 (custom-set-variables '(enable-recursive-minibuffers t))
 (minibuffer-depth-indicate-mode nil)
+
+(custom-set-variables
+ ;; TODO probably remove this at some point, but have popups for
+ ;; direnv is annoying.
+ '(log-warning-minimum-level :error))
 
 ;; TODO these should probably be in func and customize.
 (defun mh/sudo-find-file (file-name)
@@ -333,16 +351,57 @@ directory."
                (save-buffer)
                (kill-buffer (get-file-buffer file)))))))
 
+(defun mh/display-mm-dimensions ()
+  "Display dimensions (in mm) as reported by xrandr.
+`display-mm-width', `x-display-mm-width', etc. return values
+based on the number of pixels and DPI. So if the DPI is
+incorrect, these dimensions will be too."
+  (let* ((xrandr-output (shell-command-to-string "xrandr --query --verbose | grep 'connected primary'"))
+         (rotation (substring
+                    (shell-command-to-string (concat "echo -n '" xrandr-output "' | " "cut -d ' ' -f 6"))
+                    0 -1))
+         (match-1-start (string-match "[0-9]+mm" xrandr-output))
+         (match-1-end (match-end 0))
+         (match-2-start (string-match "[0-9]+mm" xrandr-output match-1-end))
+         (match-2-end (match-end 0))
+         (width (string-to-number
+                 (substring xrandr-output match-1-start (- match-1-end 2))))
+         (height (string-to-number
+                  (substring xrandr-output match-2-start (- match-2-end 2)))))
+    (if (or (string-equal "left" rotation)
+            (string-equal "right" rotation))
+        `(,height . ,width)
+      `(,width . ,height))))
+
+(defun mh/display-pixel-dimensions ()
+  "Display dimensions (in pixels) as reported by xrandr.
+`display-pixel-width' and `display-pixel-width' appear to display
+the pixel dimensions of the screen rather than the display (see
+xrandr -q)."
+  (let* ((xrandr-output (shell-command-to-string "xrandr | grep 'connected primary'"))
+         (match-1-start (string-match "[0-9]+x" xrandr-output))
+         (match-1-end (match-end 0))
+         (match-2-start (string-match "[0-9]+\\+" xrandr-output match-1-end))
+         (match-2-end (match-end 0))
+         (width (string-to-number
+                 (substring xrandr-output match-1-start (- match-1-end 1))))
+         (height (string-to-number
+                  (substring xrandr-output match-2-start (- match-2-end 1)))))
+    `(,width . ,height)))
+
 (defun mh/dpi ()
   "Screen resolution in DPI.
 Returns a list in which the first number is the DPI in the
 horizontal direction, and the second number is the DPI in the
-vertical direction."
-  (let ((in/mm (/ 1 25.4)))
-    (list (/ (display-pixel-width)
-             (* in/mm (display-mm-width)))
-          (/ (display-pixel-height)
-             (* in/mm (display-mm-height))))))
+vertical direction.  Another way to do this would be to parse the
+output of 'xdpyinfo | grep resolution'."
+  (let ((in/mm (/ 1 25.4))
+        (pixel-dimensions (mh/display-pixel-dimensions))
+        (mm-dimensions (mh/display-mm-dimensions)))
+    (list (/ (car pixel-dimensions)
+             (* in/mm (car mm-dimensions)))
+          (/ (cdr pixel-dimensions)
+             (* in/mm (cdr mm-dimensions))))))
 
 (defun mh/image-exif ()
   "Print Exif data associated with the image file corresponding to

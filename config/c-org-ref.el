@@ -11,8 +11,6 @@
     (straight-use-package 'org-ref))
 
 (require 'org-ref)
-(setq org-ref-default-bibliography "~/doc/notes/wiki/library.bib")
-(setq org-ref-bibliography-files '("~/doc/notes/wiki/library.bib"))
 
 (defun mh/org-ref-update-ref-at-point ()
   "Update the 7 character identifier at point as well as all

@@ -8,17 +8,7 @@
 (setq config-dir (concat user-emacs-directory "config"))
 (setq load-path (append load-path `(,config-dir)))
 
-(defun mh:log-init (level message)
-  "Log LEVEL and MESSAGE to *init*.
-LEVEL is the severity of the message, such as WARNING or ERROR."
-  (unless (or (string-equal level "ERROR")
-              (string-equal level "WARNING"))
-    (error "Invalid LEVEL argument specified in 'mh:log-init"))
-  (if (string-equal level "ERROR")
-      (error message)
-    (with-current-buffer (get-buffer-create "*init*")
-      (insert (concat level ": " message "\n")))))
-
+(load (concat user-emacs-directory "pre-init.el"))
 
 (require 'c-straight)
 
@@ -29,6 +19,10 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
       (-remove (lambda (path)
                  (string-equal (substring path -3 nil) "org"))
                load-path))
+
+(require 'server)
+(unless (server-running-p)
+  (server-start))
 
 (require 'c-use-package) ; TODO remove
 (require 'c-auto-compile)
@@ -92,7 +86,6 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-json-mode)
 (require 'c-langtool)
 (require 'c-switch-window)
-(require 'c-tzc)
 
 ;; lsp
 (require 'c-lsp-mode)
@@ -102,7 +95,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 ;; magit
 (require 'c-transient)
 (require 'c-magit)
-(require 'c-forge)
+;;(require 'c-forge)
 
 (require 'c-make-mode)
 (require 'c-man)
@@ -113,7 +106,6 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-nixpkgs-fmt)
 (require 'c-nix-update)
 (require 'c-notmuch)
-(require 'c-nov)
 (require 'c-octave)
 (require 'c-pdf-tools)
 
@@ -132,10 +124,16 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-org-api)
 (require 'c-org-texnum)
 (require 'c-ob)
+(require 'c-ob-python)
+(require 'c-ob-latex)
 (require 'c-ob-sagemath)
 (require 'c-ob-spice)
 (require 'c-org-eldoc)
 (require 'c-ob-async)
+
+(require 'c-bibtex)
+(require 'c-nov)
+(require 'c-tzc)
 
 ;; helm
 (require 'c-helm)
@@ -192,7 +190,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 (require 'c-x86-lookup)
 (require 'c-yaml-mode)
 (require 'c-async)
-(require 'c-tree-sitter)
+;;(require 'c-tree-sitter)
 (require 'c-indent-bars)
 (require 'c-csv-mode)
 
@@ -220,7 +218,7 @@ LEVEL is the severity of the message, such as WARNING or ERROR."
 ;; colors make many things completely illegible.
 (if (display-images-p)
     (require 'c-naysayer-theme))
-(require 'c-spaceline)
+;; (require 'c-spaceline)
 
 ;; keybindings
 (require 'c-evil)

@@ -1,6 +1,11 @@
 #+NAME: attr_wrap
-#+header: :exports none
-#+BEGIN_SRC sh :var data="" :var orgwidth="" :var htmlwidth="" :var caption="" :var name="" :results output
+#+header: :var data=""
+#+header: :var orgwidth=""
+#+header: :var htmlwidth=""
+#+header: :var caption=""
+#+header: :var name=""
+#+header: :var latex=""
+#+BEGIN_SRC sh :results output :exports none
   if [ -n "$caption" ]; then
     echo "#+CAPTION: $caption"
   fi
@@ -13,12 +18,19 @@
   if [ -n "$name" ]; then
     echo "#+NAME: $name"
   fi
-  echo "$data"
+  if [ -n "$latex" ]; then
+    echo "#+ATTR_LATEX: $latex"
+  fi
+  # Remove all leading and trailing newlines. See
+  # https://stackoverflow.com/a/23894449.
+  echo "$data" | tac - | sed -e '/./,$!d' | tac | sed -e '/./,$!d'
+  # echo "$data"
 #+END_SRC
 
 #+NAME: latexml_proc
 #+header: :exports none
-#+BEGIN_SRC sh :var data="" :results output
+#+header: :var data=""
+#+BEGIN_SRC sh :results output
   echo "#+begin_export html"
   latexmlc "literal:$data" --profile=fragment \
     --preload=siunitx.sty \

@@ -3,8 +3,5 @@
 # key: sage
 # --
 #+begin_src sage :results output
-from sage.symbolic.integration.integral import definite_integral
-from sage.symbolic.integration.integral import indefinite_integral
-x=var('x')
 $0
 #+end_src

@@ -12,10 +12,11 @@
 
 (defun mh//ob-python-results ()
   ""
-  (mh//by-backend `((latex . "output raw")
-                    (t . ,(if (mh//header-match (org-element-at-point) ":_class pylatex")
-                              "file link replace"
-                            "output")))))
+  (mh//by-backend
+   `((latex . "output raw")
+     (t . ,(if (mh//header-match (org-element-at-point) ":_class pylatex")
+               "file link replace"
+             "output")))))
 
 ;; (defun mh//ob-python-wrap ()
 ;;   ""
@@ -29,9 +30,13 @@
         (:results . (lambda () (mh//ob-python-results)))
         (:wrap . "results")
         (:var . (lambda ()
-                  (concat "fname=\"" (mh//org-src-block-result-filename) "\"")))
+                  (concat "fname=\""
+                          (mh//org-src-block-latex-result-filename)
+                          "\"")))
         (:var . (lambda ()
-                  (concat "bg=\"" (substring (face-background 'default) 1 nil) "\"")))
+                  (concat "bg=\""
+                          (substring (face-background 'default) 1 nil)
+                          "\"")))
         (:var . (lambda ()
                   (concat "backend=\"" (mh/backend-name) "\"")))
         (:var . (lambda ()
@@ -41,7 +46,7 @@
         (:cache . "yes")
         (:file . (lambda ()
                    (if (mh//header-match (org-element-at-point) ":_class pylatex")
-                       (mh//org-src-block-result-filename)
+                       (mh//org-src-block-latex-result-filename)
                      "")))))
 
 (provide 'c-ob-python)

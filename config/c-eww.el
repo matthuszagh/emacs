@@ -9,10 +9,13 @@
 
 (require 'eww)
 
-;; use eww as default browser
-(setq browse-url-browser-function 'eww-browse-url)
-;; use firefox as backup
-(setq browse-url-secondary-browser-function 'browse-url-firefox)
+(custom-set-variables
+ ;; use eww as default browser
+ '(browse-url-browser-function 'eww-browse-url)
+ ;; use firefox as backup
+ '(browse-url-secondary-browser-function 'browse-url-firefox)
+ ;; use google as the search engine
+ '(eww-search-prefix "https://google.com/search?q="))
 
 (provide 'c-eww)
 ;;; c-eww.el ends here

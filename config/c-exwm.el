@@ -7,7 +7,10 @@
 (if (featurep 'straight)
     (straight-use-package 'exwm))
 
-(setq exwm-workspace-number 3)
+(require 'exwm)
+(require 'exwm-config)
+
+;;(setq exwm-workspace-number 3)
 (setq mh--exwm-window-pixel-delta 100)
 (defun mh/exwm-enlarge ()
   (interactive)
@@ -80,8 +83,6 @@
 ;;         ([y] . [?\C-c])
 ;;         ([p] . [?\C-v])))
 
-(require 'exwm)
-(require 'exwm-config)
 
 (exwm-enable)
 ;; Don't send C-g to window in line mode.
@@ -109,11 +110,17 @@
           (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI2")))
       (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
           (progn
-            (setq exwm-randr-workspace-monitor-plist '(0 "DisplayPort-0" 1 "DisplayPort-1" 2 "DisplayPort-2"))
+            (custom-set-variables
+             '(exwm-workspace-number 3)
+             '(exwm-randr-workspace-monitor-plist '(0 "DP-1" 1 "DP-2" 2 "DP-3")))
             (start-process-shell-command
-             "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate left --pos 0x0"
-                                  " --output DisplayPort-1 --rotate left --pos 2160x0"
-                                  " --output DisplayPort-2 --pos 0x3840")))))))
+             "xrandr" nil (concat "xrandr --output DP-1 --rotate normal"
+                                  " --output DP-2 --rotate left --below DP-1"
+                                  " --output DP-3  --rotate left --right-of DP-2")))
+        (if (string= "st5\n" (shell-command-to-string "hostname"))
+            (progn
+              (custom-set-variables
+               '(exwm-workspace-number 1))))))))
 
 (exwm-change-screen-hook)
 (add-hook 'exwm-init-hook 'exwm-change-screen-hook)
@@ -150,6 +157,19 @@
 
 (add-hook 'exwm-update-class-hook 'exwm-rename-buffer)
 (add-hook 'exwm-update-title-hook 'exwm-rename-buffer)
+
+(defun mh/rotate-display (rotate)
+  (interactive "sRotate (left/normal): ")
+  "Rotate display.
+TODO allow this to work for different machines and for individual displays."
+  (if (not (or (equal rotate "left")
+               (equal rotate "normal")))
+      (error "Rotate must be 'left' or 'normal'.")
+    (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
+        (start-process-shell-command
+         "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate "
+                              rotate
+                              " --output DisplayPort-1 --right-of DisplayPort-0 --rotate left")))))
 
 (provide 'c-exwm)
 ;;; c-exwm.el ends here

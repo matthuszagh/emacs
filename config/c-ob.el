@@ -50,34 +50,15 @@ file rather than being provided as a default header argument."
     (concat (org-element-property :value elem)
             (mh//concat-list (org-element-property :header elem)))))
 
-(defun mh//org-src-block-result-filename ()
-  "Name of the file produced by the LaTeX source block at point."
-  (let* ((elem (org-element-at-point))
-         (class-mathp (mh//header-match elem ":_class math")))
-    (if (and org-export-current-backend class-mathp)
-        nil
-      (concat "tmp/"
-              (sha1 (mh//org-src-block-contents))
-              ;; If this is not a math block (:_class math) and it's
-              ;; being evaluated for display within org-mode, we
-              ;; append the current background color to the file
-              ;; name. This forces org-mode to reevaluate the block
-              ;; whenever the background color changes. This is
-              ;; necessary, because although we can inherit the
-              ;; foreground color from the context (SVG's
-              ;; currentColor), we must hardcode the background color.
-              (unless (or org-export-current-backend
-                          class-mathp)
-                (concat "-"
-                        (substring (face-background 'default) 1 nil)))
-              ".svg"))))
-
 (defun mh//by-backend (blist)
   "TODO"
   (let ((ret nil))
     (if org-export-current-backend
         (let* ((backend-name org-export-current-backend)
-               (elem (assoc backend-name blist)))
+               ;; Get the value for the backend, or t, if blist
+               ;; doesn't specify the backend.
+               (elem (or (assoc backend-name blist)
+                         (assoc t blist))))
           (if elem
               (setq ret (cdr elem))))
       (let ((elem (assoc t blist)))

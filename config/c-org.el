@@ -4,8 +4,6 @@
 
 ;;; Code:
 
-;; TODO consider setting org-capture-bookmark to nil
-
 (if (featurep 'straight)
     (progn
       (straight-use-package 'org)
@@ -270,16 +268,53 @@
 
 (defun mh//org-latex-scale (imagedata imagetype)
   "Scale inline LaTeX fragments to match the height of the surrounding text."
+  ;; TODO this function doesn't really make sense to me. However, it
+  ;; seems to work when the xserver DPI is correctly set.
+  ;;
+  ;; TODO this won't work if multiple displays are used with different
+  ;; resolutions. In that case it will use the primary display to
+  ;; calculate the DPI.
   (let ((dpi-y (cadr (mh/dpi)))
         (pt/in 72.27)
-        ;; we use a latex font size of 10pt
-        (latex-height-pt 10))
-    (let ((current-font-height-in (/ (default-font-height) dpi-y))
-          (latex-height-in (/ latex-height-pt pt/in)))
-      (/ current-font-height-in latex-height-in))))
+        ;; We use a LaTeX font size of 10. This is set by
+        ;; `org-format-latex-header', which uses the standalone
+        ;; document class, that uses, in turn, "article" by
+        ;; default. We use this rather than the current text font
+        ;; height because the latex fragments were compiled using this
+        ;; font size. The size of a capital M in 10-point font is
+        ;; 6.88875, so we use that. To find that value, use
+        ;;
+        ;; \newlength{\mylen}
+        ;; \settoheight{\mylen}{A}
+        ;; \message{M height is \the\mylen}
+        (latex-height-pt 6.88875))
+    ;; TODO why 290 and not dpi-y?
+    (let* ((line-height-in (/ (default-font-height) 290.0))
+           (latex-height-in (/ latex-height-pt pt/in)))
+      ;; TODO Ryzen font needs to be a little bigger.
+      (if (and (string= "ryzen3950" (shell-command-to-string "echo -n $HOSTNAME"))
+               ;; Ensure we're not connected to Ryzen over ssh, in
+               ;; which case we want the smaller font. See
+               ;; https://unix.stackexchange.com/a/9607/293576.
+               (string= "" (shell-command-to-string "echo -n $SSH_CLIENT"))
+               (string= "" (shell-command-to-string "echo -n $SSH_TTY")))
+          (* 1.2 (/ line-height-in latex-height-in))
+        (* 1.0 (/ line-height-in latex-height-in))))))
+
+;; `org--get-display-dpi' returns the incorrect DPI e.g., on remote
+;; displays. This isn't currently used in anything - I've setup latex
+;; inline image generation to ignore DPI (I compute use that
+;; elsewhere), but still a good idea to fix the DPI value.
+(defun mh//org--get-display-dpi ()
+  "Overlay of `org--get-display-dpi'."
+  ;; Get the y-component of DPI since this is what org uses when
+  ;; calculating latex inline image sizes.
+  (cadr (mh/dpi)))
+(advice-add 'org--get-display-dpi :override #'mh//org--get-display-dpi)
 
 (defun mh/update-org-latex-fragments-in-buffer ()
   "Clear and redisplay all LaTeX fragments in the current buffer."
+  (interactive)
   (if (eq major-mode 'org-mode)
       (progn
         (org-clear-latex-preview)
@@ -365,15 +400,16 @@
                 :image-converter (,(concat "dvisvgm --no-fonts --exact-bbox -o %O %f"
                                            " && sed -i 's/#000000/currentColor/g; s/#ffffff/none/g' %O"))))
 
-(setq org-format-latex-options
-      '(:foreground "Black"
-        :background "Transparent"
-        :scale 1.0
-        :html-foreground "Black"
-        :html-background "Transparent"
-        :html-scale 1.0
-        :matchers
-        ("begin" "$1" "$" "$$" "\\(" "\\[")))
+(custom-set-variables
+ '(org-format-latex-options '(:foreground "Black"
+                              :background "Transparent"
+                              :scale 1.0
+                              :html-foreground "Black"
+                              :html-background "Transparent"
+                              :html-scale 1.0
+                              :matchers
+                              ;; Only delimit with \(\).
+                              ("\\("))))
 
 (add-to-list 'org-preview-latex-process-alist luasvgm)
 (setq org-preview-latex-default-process 'luasvgm)
@@ -564,6 +600,32 @@ TODO this works but is slow."
      ("_{source}" . "_{\\\\mathrm{source}}")
      (",>=stealth" . ""))))
 
+(defun mh/org-replace-old-latex-blocks-in-current-buffer ()
+  "WARNING: this function isn't very robust and can only be run once."
+  (interactive)
+  (mh/replace-all-alist-items-in-current-buffer
+   '(;; aligned blocks in latex fragment
+     ("\\\\(\\\\begin{aligned}" . "#+begin_src latex :hidden\n\\\\begin{align}")
+     ("\\\\end{aligned}\\\\)" . "\\\\end{align}\n#+end_src")
+     ;; aligned without inline math delimiter
+     ;; TODO can't be run twice
+     ("\\\\begin{aligned}" . "#+begin_src latex :hidden\n\\\\begin{align}")
+     ("\\\\end{aligned}" . "\\\\end{align}\n#+end_src")
+     ;; align* without inline math delimiter
+     ;; TODO can't be run twice
+     ("\\\\begin{align\\*}" . "#+begin_src latex :hidden\n\\\\begin{align}")
+     ("\\\\end{align\\*}" . "\\\\end{align}\n#+end_src")
+     ;; circuitikz blocks
+     ;; TODO can't be run twice
+     ("\\\\begin{circuitikz}" . "#+begin_src latex :hidden\n\\\\begin{circuitikz}")
+     ("\\\\end{circuitikz}" . "\\\\end{circuitikz}\n#+end_src")
+     ;; latex fragments that should really be src display blocks
+     ("^\\\\(\n" . "#+begin_src latex :hidden\n\\\\begin{equation}\n")
+     ("^\\\\)" . "\\\\end{equation}\n#+end_src")
+     ;; latex blocks
+     ("^\\\\begin{latex}" . "#+begin_src latex :hidden")
+     ("^\\\\end{latex}" . "#+end_src"))))
+
 (defun mh/org-insert-file-image (file)
   "Insert an inline image at point from FILE into an Org buffer."
   (interactive "fFile: ")
@@ -640,7 +702,7 @@ TODO this works but is slow."
            "** glossary\n")))
 
 ;; TODO doesn't quite work with org-fragtog yet.
-(defun mh/org-open-latex-fragment-file-at-point ()
+(defun mh/org-open-overlay-file-at-point ()
   "Open the file storing the latex fragment at point."
   (interactive)
   (let ((pt (point)))
@@ -690,6 +752,16 @@ org-capture instead."
                                   ":NOTER_PAGE: " (number-to-string .page) "\n"
                                   ":END:\n"))))
     org-outline))
+
+;; TODO laas-mathp sort of already does this.
+(defun mh/org-latex-math-p ()
+  "Indicates whether point is within a LaTeX math environment within an org buffer."
+  (or (and (org-inside-LaTeX-fragment-p)
+           (texmathp))
+      (and (org-in-src-block-p)
+           (equal (org-element-property :language (org-element-at-point))
+                  "latex")
+           (texmathp))))
 
 (provide 'c-org)
 ;;; c-org.el ends here

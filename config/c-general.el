@@ -232,6 +232,12 @@
      "l" 'helm-librarian)
   (mh:log-init "WARNING" "Failed to define keybindings for helm-librarian, which was not loaded."))
 
+(if (featurep 'c-helm-librarian-recoll)
+    (general-define-key
+     :keymaps 'mh/prefix-file-map
+     "r" 'helm-librarian-recoll)
+  (mh:log-init "WARNING" "Failed to define keybindings for helm-librarian-recoll, which was not loaded."))
+
 (if (featurep 'c-clang-format)
     (localleader
       :keymaps 'c-mode-base-map
@@ -261,8 +267,8 @@
       (general-define-key
        :states 'normal
        :keymaps 'pdf-view-mode-map
-       "j" 'pdf-view-next-line-or-next-page
-       "k" 'pdf-view-previous-line-or-previous-page
+       "j" 'mh/pdf-view-scroll-down
+       "k" 'mh/pdf-view-scroll-up
        "SPC" 'mh/command-prefix
        "g l" 'pdf-view-goto-page
        "l" 'image-forward-hscroll
@@ -414,9 +420,10 @@
        :prefix-command 'mh/command-info-prefix
        :prefix-map 'mh/prefix-info-map
        "f" 'org-roam-node-find
+       "t" 'mh/org-roam-node-find-todo
        "i" 'org-roam-node-insert)
       (localleader :keymaps 'org-mode-map
-        "r" 'org-roam))
+        "r" 'org-roam-buffer-toggle))
   (mh:log-init "WARNING" "attempted to set org-roam keybindings without loading 'c-org-roam"))
 
 (if (featurep 'c-org-noter)
@@ -482,7 +489,7 @@
 (if (featurep 'c-helm)
     (progn
       (general-def mh/prefix-search-map
-        "p" 'helm-browse-project
+        "p" 'helm-ls-git-ls
         "P" 'helm-projects-history)
       (general-def mh/prefix-map
         "SPC" 'helm-M-x)

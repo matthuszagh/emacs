@@ -21,7 +21,7 @@
       helm-locate-fuzzy-match t
       helm-apropos-fuzzy-match t
       helm-lisp-fuzzy-completion t)
-(use-package helm-config)
+;;(use-package helm-config)
 ;; move to end or beginning of source when reaching top or bottom of source.
 (setq helm-split-window-inside-p t
       helm-move-to-line-cycle-in-source t
@@ -30,12 +30,7 @@
       ;; scroll 8 lines other window using M-<next>/M-<prior>
       helm-scroll-amount 8
       helm-ff-file-name-history-use-recentf t)
-(setq helm-autoresize-max-height 0
-      helm-autoresize-min-height 30)
-(helm-autoresize-mode 1)
 (helm-mode 1)
-;; maximum buffer string length before truncation
-(setq helm-buffer-max-length 60)
 (setq-default helm-follow-mode-persistent t)
 
 (custom-set-variables
@@ -44,7 +39,14 @@
  ;; the helm buffer is counterintuitive because it makes it appear as
  ;; though the input is one of the selections from the list, which it
  ;; isn't.
- '(helm-echo-input-in-header-line nil))
+ '(helm-echo-input-in-header-line t)
+ ;; Limit helm buffer height to 20 lines.
+ '(helm-autoresize-mode -1)
+ '(helm-display-buffer-default-height 20)
+ '(helm-autoresize-min-height 15)
+ '(helm-autoresize-max-height 15)
+ ;; maximum buffer string length before truncation
+ '(helm-buffer-max-length 40))
 
 (if (featurep 'c-org-roam)
     ;; Customizes helm to use

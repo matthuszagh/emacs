@@ -8,12 +8,19 @@
 
 (defun latex-preamble-by-backend (params)
   "Set the latex source block preamble."
-  (concat "\\documentclass{"
-          (cdr (assoc :_class params))
+  (concat "\\documentclass"
+          (let ((width (cdr (assoc :_width params))))
+            (if width
+                (concat "[width="
+                        width
+                        "]")))
+          "{"
+          "_standalone"
+          ;;(cdr (assoc :_class params))
           "}"
           ;; All of the following are color settings and only need to
-          ;; be performed for :_class tikz.
-          (if (string= "tikz" (cdr (assoc :_class params)))
+          ;; be performed for for images.
+          (if (assoc :_image params)
               (concat
                ;; The background color is necessary in graphics in
                ;; order to be able to overlay elements on top of
@@ -81,7 +88,7 @@
 (defun mh//org-src-block-latex-post ()
   ""
   (let* ((elem (org-element-at-point))
-         (class-mathp (mh//header-match elem ":_class math"))
+         (class-mathp (not (mh//header-match elem ":_image")))
          (wrap-str "attr_wrap(data=*this*)")
          (backend org-export-current-backend))
     (if backend
@@ -99,7 +106,7 @@
 (defun mh//org-src-block-latex-results ()
   ""
   (let* ((elem (org-element-at-point))
-         (class-mathp (mh//header-match elem ":_class math")))
+         (class-mathp (not (mh//header-match elem ":_image"))))
     (if org-export-current-backend
         (let ((backend org-export-current-backend))
           (if (or (string= backend "latex")
@@ -108,18 +115,45 @@
             "file link replace"))
       "file link replace")))
 
+(defun mh//org-src-block-latex-result-filename ()
+  "Name of the file produced by the LaTeX source block at point."
+  (let* ((elem (org-element-at-point))
+         (class-mathp (not (mh//header-match elem ":_image")))
+         (filename (concat "tmp/"
+                           (sha1 (mh//org-src-block-contents))
+                           ;; If this is not a math block (:_class math) and it's
+                           ;; being evaluated for display within org-mode, we
+                           ;; append the current background color to the file
+                           ;; name. This forces org-mode to reevaluate the block
+                           ;; whenever the background color changes. This is
+                           ;; necessary, because although we can inherit the
+                           ;; foreground color from the context (SVG's
+                           ;; currentColor), we must hardcode the background color.
+                           (unless class-mathp
+                             (concat "-"
+                                     (substring (face-background 'default) 1 nil)))
+                           ".svg")))
+    (cond
+     ((equal org-export-current-backend nil)
+      filename)
+     ((equal org-export-current-backend 'latex)
+      nil)
+     ((equal org-export-current-backend 'html)
+      (if class-mathp
+          nil
+        filename)))))
+
 (defun mh//org-src-block-latex-file-description ()
   ""
   (let* ((elem (org-element-at-point))
-         (clickablep (mh//header-match elem ":_clickable"))
-         (backend org-export-current-backend))
-    (if (and clickablep (string= backend "html"))
-        (concat "file:" (mh//org-src-block-result-filename))
+         (clickablep (mh//header-match elem ":_clickable")))
+    (if (and (equal org-export-current-backend 'html))
+        (concat "file:" (mh//org-src-block-latex-result-filename))
       [])))
 
 (defun mh//org-src-block-latex-wrap ()
   (let* ((elem (org-element-at-point))
-         (class-mathp (mh//header-match elem ":_class math"))
+         (class-mathp (not (mh//header-match elem ":_image")))
          (backend org-export-current-backend))
     (if backend
         (if (string= backend "latex")
@@ -137,7 +171,7 @@
                    (mh//org-src-block-latex-wrap)))
         (:cache . "yes")
         (:file . (lambda ()
-                   (mh//org-src-block-result-filename)))
+                   (mh//org-src-block-latex-result-filename)))
         (:file-desc . (lambda ()
                         (mh//org-src-block-latex-file-description)))
         (:post . (lambda ()

@@ -29,7 +29,8 @@
 ;;; Code:
 
 (if (featurep 'straight)
-    (straight-use-package 'org-roam))
+  (progn
+    (straight-use-package 'org-roam)))
 
 ;; this must be set before org-roam is loaded
 (setq org-roam-v2-ack t)
@@ -38,6 +39,15 @@
 (require 'dash)
 
 ;; (add-hook 'org-roam-mode 'org-roam-db-autosync-mode)
+
+;; TODO I'm not sure how to update the modified timestamp. The obvious
+;; way to determine this is to update the node at point during a
+;; save. But, this will miss nodes that changed and also produce false
+;; positives.
+(defun mh//org-update-node-timestamps ()
+  "Initialize created and modified properties of current org node
+if they don't exist.  Otherwise, update modified to the current
+time if the contents of the node changed.")
 
 (defun mh//org-update-last-modified ()
   ""
@@ -52,9 +62,9 @@
           (delete-region (point) (line-end-position))
           (let ((now (format-time-string "[%Y-%m-%d %a %H:%M]")))
             (insert now))))))
-(add-hook 'org-roam-mode (lambda ()
-                           (add-hook 'before-save-hook
-                                     'mh//org-update-last-modified 0 t)))
+;; (add-hook 'org-roam-mode (lambda ()
+;;                            (add-hook 'before-save-hook
+;;                                      'mh//org-update-last-modified 0 t)))
 
 (custom-set-variables `(org-roam-capture-templates
                         `(("d" "default" plain "%?"
@@ -377,6 +387,9 @@ transformed later for appearance."
 (add-hook 'org-mode-hook (lambda ()
                            (add-hook 'after-save-hook
                                      #'mh//maybe-update-org-roam-node-cache 0 t)))
+;; (remove-hook 'org-mode-hook (lambda ()
+;;                               (add-hook 'after-save-hook
+;;                                         #'mh//maybe-update-org-roam-node-cache 0 t)))
 
 ;; Update node cache after Emacs initialization.
 (add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)

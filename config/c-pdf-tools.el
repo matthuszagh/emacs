@@ -181,16 +181,34 @@ TODO this should be extended to other paper sizes."
          (target-width (* a4-width-in (car (mh/dpi)))))
     (pdf-view-enlarge (/ target-width current-width))))
 
+;; https://github.com/vedang/pdf-tools/issues/88#issuecomment-1179708765
+(defun mh-pdf-view-mode-reload ()
+  (when (equal major-mode 'pdf-view-mode)
+    (pdf-view-mode)))
 
-(defun mh/ocr-current-buffer-pdf ()
-  "OCR PDF in current buffer."
+(defun mh/pdf-view-scroll-down ()
+  "Scroll down in pdf-view mode.
+This accounts for issues in which a PDF page is fitted to
+slightly larger than thewindow size in which case you may want to
+scroll to the next page but calling
+`pdf-view-next-line-or-next-page' scrolls down a negligible
+amount."
   (interactive)
-  (let ((path (buffer-file-name)))
-    (start-process-shell-command
-     "ocr-pdf"
-     "*ocrmypdf*"
-     (concat "ocrmypdf -s --max-image-mpixels=1000000000 "
-             path " " path))))
+  (if (or (eq pdf-view-display-size 'fit-page)
+          (eq pdf-view-display-size 'fit-height))
+      (pdf-view-next-page)
+    (pdf-view-next-line-or-next-page 1)))
+
+(defun mh/pdf-view-scroll-up ()
+  "Scroll up in pdf-view mode.
+The same as `mh/pdf-view-scroll-down' but for scrolling up."
+  (interactive)
+  (if (or (eq pdf-view-display-size 'fit-page)
+          (eq pdf-view-display-size 'fit-height))
+      (pdf-view-previous-page)
+    (pdf-view-previous-line-or-previous-page 1)))
+
+(add-hook 'clone-indirect-buffer-hook 'mh-pdf-view-mode-reload)
 
 (defun mh/ocr-current-buffer-pdf (redo-ocr)
   "OCR PDF in current buffer."

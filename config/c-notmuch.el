@@ -49,8 +49,8 @@
                              " Not sending."))
             (keyboard-quit))))))
 
-(add-hook 'message-send-hook #'mh//outgoing-blacklist-check)
-;;(remove-hook 'message-send-hook #'mh//outgoing-blacklist-check)
+(add-hook 'message-send-mail-hook #'mh//outgoing-blacklist-check)
+;;(remove-hook 'message-send-mail-hook #'mh//outgoing-blacklist-check)
 
 (defun mh//jonathan-levine-blacklist-check ()
   "Prevent sending emails to Jonathan Levine and Data I/O group simultaneously."
@@ -69,8 +69,8 @@
           (message "Don't email Jonathan and Data I/O group simultaneously.")
           (keyboard-quit)))))
 
-(add-hook 'message-send-hook #'mh//jonathan-levine-blacklist-check)
-;;(remove-hook 'message-send-hook #'mh//jonathan-levine-blacklist-check)
+(add-hook 'message-send-mail-hook #'mh//jonathan-levine-blacklist-check)
+;;(remove-hook 'message-send-mail-hook #'mh//jonathan-levine-blacklist-check)
 
 (defun mh//verify-email-send ()
   "Prompt for verification before sending an email."

@@ -12,6 +12,9 @@
 
 (require 'ledger-mode)
 
+(custom-set-variables
+ '(ledger-master-file "~/doc/finances/ledger/main.ledger"))
+
 (provide 'c-ledger-mode)
 
 ;;; c-ledger-mode.el ends here

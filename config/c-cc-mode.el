@@ -16,7 +16,9 @@
 
 (custom-set-variables
  '(tab-width 8)
- '(c-default-style '((java-mode . "java") (awk-mode . "awk") (other . "linux"))))
+ '(c-default-style '((java-mode . "java")
+                     (awk-mode . "awk")
+                     (other . "linux"))))
 
 (provide 'c-cc-mode)
 

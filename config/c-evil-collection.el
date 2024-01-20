@@ -40,14 +40,6 @@
 (evil-collection-define-key 'normal 'doc-view-mode-map (kbd "j") 'doc-view-next-page)
 (evil-collection-define-key 'normal 'doc-view-mode-map (kbd "k") 'doc-view-previous-page)
 
-;; org-mode configuration
-;; (evil-collection-define-key 'normal 'org-mode-map (kbd "<tab>") 'org-cycle)
-
-;; proced-mode configuration
-(evil-collection-define-key 'normal 'proced-mode-map (kbd "q") (lambda () (interactive)
-                                                                 (quit-window)
-                                                                 (command-execute 'symon-mode)))
-
 (provide 'c-evil-collection)
 
 ;;; c-evil-collection.el ends here

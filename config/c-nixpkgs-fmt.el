@@ -10,6 +10,7 @@
 (require 'nixpkgs-fmt)
 
 (add-hook 'nix-mode-hook 'nixpkgs-fmt-on-save-mode)
+(remove-hook 'nix-mode-hook 'nixpkgs-fmt-on-save-mode)
 
 (provide 'c-nixpkgs-fmt)
 
