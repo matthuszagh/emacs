@@ -629,13 +629,19 @@ TODO this works but is slow."
 (defun mh/org-insert-file-image (file)
   "Insert an inline image at point from FILE into an Org buffer."
   (interactive "fFile: ")
-  (insert
-   (concat "#+ATTR_ORG: :width\n"
-           "#+ATTR_HTML: :width\n"
-           "#+NAME: fig:" (file-name-base file) "\n"
-           "[[file:"
-           (file-relative-name file)
-           "]]"))
+  (let ((prefix (if (string-equal (file-name-extension file) "svg")
+                    ""
+                  ;; limit size to not get huge images and slow things down
+                  "#+ATTR_ORG: :width 250\n"))
+        (id (mh//rand-hex-string 7)))
+    (insert
+     (concat prefix
+             "#+NAME: fig:" id "\n"
+             "[[file:"
+             (file-relative-name file)
+             "]]"))
+    ;; add reference to kill ring
+    (kill-new (concat "cref:fig:" id)))
   (org-display-inline-images))
 
 (defun mh/org-insert-sections-personal-machine ()
