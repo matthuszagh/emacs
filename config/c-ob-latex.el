@@ -83,7 +83,9 @@
             "--export-text-to-path "
             "--export-plain-svg "
             "--export-filename=%O"
-            " && sed -i 's/#000000/currentColor/g; s/rgb(0.,0.,0.)/currentColor/g' %O")))
+            " && sed -i 's/#000000/currentColor/g;"
+            " s/rgb(0.,0.,0.)/currentColor/g;"
+            " s/rgb(0%%, 0%%, 0%%)/currentColor/g' %O")))
 
 (defun mh//org-src-block-latex-post ()
   ""
