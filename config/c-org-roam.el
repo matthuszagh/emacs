@@ -396,5 +396,17 @@ transformed later for appearance."
 
 ;; TODO persist the node cache across sessions.
 
+(defun mh/org-roam-screenshot (fname)
+  "Take a screenshot and save it to the wiki data folder."
+  (interactive "sFile name (excluding .png extension): ")
+  (let ((fpath (expand-file-name
+                (concat org-roam-directory "/data/" fname ".png"))))
+    (if (and (file-exists-p fpath)
+             (not (string-equal (read-string "Overwrite [y/n]?: ") "y")))
+        (display-warning :warning
+          (concat "File " fpath " already exists\n"))
+      (call-process "import" nil "*ImageMagick import*" nil fpath)
+      (mh/org-insert-file-image fpath))))
+
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here
