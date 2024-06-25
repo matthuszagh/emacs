@@ -154,7 +154,9 @@
 (custom-set-variables
  ;; TODO probably remove this at some point, but have popups for
  ;; direnv is annoying.
- '(log-warning-minimum-level :error))
+ '(log-warning-minimum-level :error)
+ ;; disable mouse scrolling and zooming
+ '(mouse-wheel-mode nil))
 
 ;; TODO these should probably be in func and customize.
 (defun mh/sudo-find-file (file-name)
