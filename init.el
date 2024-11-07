@@ -211,6 +211,8 @@
 
 (require 'c-elpy)
 
+(require 'c-gptel)
+
 ;; themes
 ;; Only load naysayer if we're in a window manager. We use whether
 ;; we're able to display images as a proxy for this. Obviously, that's
