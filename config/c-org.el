@@ -45,7 +45,15 @@
  ;; any time you add a property longer than the current max property,
  ;; you'd need to change this value and update all drawers. Finally, I
  ;; don't see much of a benefit to lining up values.
- '(org-property-format "%s %s"))
+ '(org-property-format "%s %s")
+ ;; Disable cache persistance between Emacs sessions. This seems to
+ ;; interfere with the org-roam node cache. In fact, org-persist seems
+ ;; to be the source of all sorts of woes. For example, I was
+ ;; constantly running into an issue in which tramp would try to
+ ;; connect to a remote host when seemingly unrelated command was run
+ ;; (like closing emacs). This was caused by the org-persist cache,
+ ;; which is located in ~/.cache/org-persist.
+ '(org-element-cache-persistent nil))
 
 (defun org-summary-todo (n-done n-not-done)
   "Switch entry to DONE when all subentries are done, to TODO otherwise."
