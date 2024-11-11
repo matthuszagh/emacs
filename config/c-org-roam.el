@@ -254,6 +254,9 @@ transformed later for appearance."
 (defvar mh-org-roam-node-cache nil
   "Cache for mh/org-roam-node-find.")
 
+(defvar mh-org-roam-node-cache-save-file (concat (file-name-directory org-roam-db-location) "node-cache.el")
+  "Save cache to file between sessions.")
+
 (defun mh/update-org-roam-node-cache ()
   "Update mh-org-roam-node-cache."
   ;; First ensure the database is up-to-date.
@@ -280,6 +283,7 @@ transformed later for appearance."
                  (mh/org-roam-node-candidates))
                (lambda (result)
                  (setq mh-org-roam-node-cache result)
+                 (mh//dump-vars-to-file '(mh-org-roam-node-cache) mh-org-roam-node-cache-save-file)
                  (message "mh/update-org-roam-node-cache-async complete"))))
 
 (defun mh//org-roam-node-candidate-predicate (candidate)
@@ -391,8 +395,11 @@ transformed later for appearance."
 ;;                               (add-hook 'after-save-hook
 ;;                                         #'mh//maybe-update-org-roam-node-cache 0 t)))
 
-;; Update node cache after Emacs initialization.
-(add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)
+;; Load cache to file after Emacs initialization.
+(add-hook 'after-init-hook (lambda ()
+                             (load mh-org-roam-node-cache-save-file)))
+;; ;; Update node cache after Emacs initialization.
+;; (add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)
 
 ;; TODO persist the node cache across sessions.
 

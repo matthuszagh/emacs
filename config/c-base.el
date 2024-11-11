@@ -433,5 +433,23 @@ the current buffer."
                                        "-r '" file ".zip'"
                                        " '" file "'")))
 
+(defun mh//dump-vars-to-buffer (varlist buffer)
+  "Dump variable value to a buffer. Taken from https://stackoverflow.com/a/2322164."
+  (loop for var in varlist do
+        (print (list 'setq var (list 'quote (symbol-value var))) buffer)))
+
+(defun mh//dump-vars-to-file (vars filename)
+  "Dump variable to file such that it can be resurrected later with
+'load or 'read.  Taken from https://stackoverflow.com/a/2322164.
+TODO it would probably be preferable if saving the buffer were
+asynchronous, since it incurs a slight delay for large variables."
+  (save-excursion
+    (let ((buf (find-file-noselect filename)))
+      (set-buffer buf)
+      (erase-buffer)
+      (mh//dump-vars-to-buffer vars buf)
+      (mh/save-without-hooks)
+      (kill-buffer))))
+
 (provide 'c-base)
 ;;; c-base.el ends here
