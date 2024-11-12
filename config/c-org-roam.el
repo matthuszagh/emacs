@@ -254,8 +254,12 @@ transformed later for appearance."
 (defvar mh-org-roam-node-cache nil
   "Cache for mh/org-roam-node-find.")
 
-(defvar mh-org-roam-node-cache-save-file (concat (file-name-directory org-roam-db-location) "node-cache.el")
+(defvar mh-org-roam-node-cache-save-file
+  (concat (file-name-directory org-roam-db-location) "node-cache.el")
   "Save cache to file between sessions.")
+
+(defvar mh-org-roam-node-cache-save-file-out-of-date nil
+  "`t' if cache file is out-of-date.  `nil' if up-to-date.")
 
 (defun mh/update-org-roam-node-cache ()
   "Update mh-org-roam-node-cache."
@@ -263,7 +267,6 @@ transformed later for appearance."
   (org-roam-db-sync)
   (setq mh-org-roam-node-cache (mh/org-roam-node-candidates)))
 
-;; TODO nodes not updating
 (defun mh/update-org-roam-node-cache-async ()
   "Update mh-org-roam-node-cache asynchronously."
   (interactive)
@@ -271,6 +274,12 @@ transformed later for appearance."
                  (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
                  (load "~/.config/emacs/config/c-no-littering.el")
                  (load "~/.config/emacs/config/c-org-roam.el")
+                 ;; Set a large open file (soft) limit so that
+                 ;; org-roam-db-sync does not exit early complaining
+                 ;; about too many open files.
+                 (let ((nfiles (length (directory-files org-roam-directory nil "\\.org\\'"))))
+                   (shell-command-to-string (concat "prlimit --nofile=" (number-to-string (* 10 nfiles))
+                                                    ": --pid " (number-to-string (emacs-pid)))))
                  ;; Minimize the time this update locks the database,
                  ;; which prevents use.
                  (let* ((original-file org-roam-db-location)
@@ -278,13 +287,30 @@ transformed later for appearance."
                          (concat (file-name-directory original-file)
                                  "org-roam.new.db")))
                    (copy-file original-file org-roam-db-location t)
-                   (org-roam-db-sync)
+                   ;; Disable `find-file-hook's prior to performing a
+                   ;; sync, since this performs a lot of unnecessary
+                   ;; excess tasks.
+                   (let ((find-file-hook nil))
+                     ;; The database sometimes does not update
+                     ;; correctly when a full from-scratch sync is not
+                     ;; performed. So, we force a complete resync.
+                     (org-roam-db-sync t))
                    (rename-file org-roam-db-location original-file t))
                  (mh/org-roam-node-candidates))
                (lambda (result)
                  (setq mh-org-roam-node-cache result)
-                 (mh//dump-vars-to-file '(mh-org-roam-node-cache) mh-org-roam-node-cache-save-file)
+                 ;; mark cache file out of date to be updated when Emacs is idle
+                 (setq mh-org-roam-node-cache-save-file-out-of-date t)
                  (message "mh/update-org-roam-node-cache-async complete"))))
+
+;; update cache file when Emacs is idle
+(run-with-idle-timer
+ 30 t
+ (lambda ()
+   (if mh-org-roam-node-cache-save-file-out-of-date
+       (progn
+         (mh//dump-vars-to-file '(mh-org-roam-node-cache) mh-org-roam-node-cache-save-file)
+         (setq mh-org-roam-node-cache-save-file-out-of-date nil)))))
 
 (defun mh//org-roam-node-candidate-predicate (candidate)
   ""
