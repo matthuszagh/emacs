@@ -355,7 +355,8 @@
         "L" 'org-latex-preview
         "z" 'mh/command-org-tex-insert-prefix
         "o" 'org-open-at-point
-        "R" 'org-table-iterate-buffer-tables)
+        "R" 'org-table-iterate-buffer-tables
+        "m" 'mh/surround-math-delimiters)
 
       (general-define-key
        :keymaps 'org-mode-map

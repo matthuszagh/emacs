@@ -451,5 +451,18 @@ asynchronous, since it incurs a slight delay for large variables."
       (mh/save-without-hooks)
       (kill-buffer))))
 
+(defun mh/surround-math-delimiters (&optional beg end)
+  "Surround selected text or word at point in buffer with \\(...\\)."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let ((bounds (bounds-of-thing-at-point 'word)))
+       (list (car bounds) (cdr bounds)))))
+  (save-excursion
+    (goto-char beg)
+    (insert "\\(")
+    (goto-char (+ end 2))
+    (insert "\\)")))
+
 (provide 'c-base)
 ;;; c-base.el ends here
