@@ -25,6 +25,43 @@
 ;; place archives in the current file under the top-level 'archive' headline
 (setq org-archive-location "::* archive")
 
+;; Remove "<" and ">" as pair elements in org-mode's syntax table. "<"
+;; and ">" are used extensively in TeX snippets not as pair elements.
+
+;; TODO this doesn't seem to fix everything. `check-parens' still
+;; calls out unmatched "<" and ">" delimiters and I get messages about
+;; mismatched parentheses. However, the
+;; `mh/org-mode-remove-angle-bracket-syntax' solution does work.
+;;
+;; (modify-syntax-entry ?< "." org-mode-syntax-table)
+;; (modify-syntax-entry ?> "." org-mode-syntax-table)
+;; ;; ;; this can be undone with the following, if ever desired
+;; ;; (modify-syntax-entry ?< "(>" org-mode-syntax-table)
+;; ;; (modify-syntax-entry ?> ")<" org-mode-syntax-table)
+
+(defun mh/org-mode-remove-angle-bracket-syntax ()
+  "In Org-mode, make < and > regular punctuation (not parens)."
+  (modify-syntax-entry ?< "." (syntax-table))
+  (modify-syntax-entry ?> "." (syntax-table)))
+
+(add-hook 'org-mode-hook #'mh/org-mode-remove-angle-bracket-syntax)
+
+;; Also disable "<" and ">" in electric-pair mode, to prevent them
+;; being inserted together.
+(defun mh/inhibit-electric-pair-angle-brackets (char)
+  "Prevent electric pairing of angle brackets in Org-mode."
+  (and (eq major-mode 'org-mode)
+       (eq char ?<)))
+(add-hook
+ 'org-mode-hook
+ (lambda ()
+   (setq-local
+    electric-pair-inhibit-predicate
+    (lambda (c)
+      (or (mh/inhibit-electric-pair-angle-brackets c)
+          (when (default-value 'electric-pair-inhibit-predicate)
+            (funcall (default-value 'electric-pair-inhibit-predicate) c)))))))
+
 (custom-set-variables
  ;; Remove all emphasis markers. Strikethrough is annoying when using
  ;; '+' in math, '/' and '~' which mess up paths, and I've had issues
