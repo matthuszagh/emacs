@@ -207,7 +207,7 @@
 ;; snippets
 (require 'c-yasnippet)
 (require 'c-auto-activating-snippets)
-(require 'c-latex-auto-activating-snippets)
+;; (require 'c-latex-auto-activating-snippets)
 
 (require 'c-elpy)
 
