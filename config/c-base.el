@@ -464,5 +464,38 @@ asynchronous, since it incurs a slight delay for large variables."
     (goto-char (+ end 2))
     (insert "\\)")))
 
+
+(defun mh/get-max-brightness ()
+  "Return the maximum settable backlight brightness. TODO the actual limit is lower. How is this determined?"
+  (interactive)
+  (string-to-number (shell-command-to-string "cat /sys/class/backlight/apple-panel-bl/max_brightness")))
+
+(defun mh/get-current-brightness ()
+  "Return current backlight brightness setting."
+  (interactive)
+  (string-to-number (shell-command-to-string "light -G")))
+
+(defun mh/increase-brightness ()
+  "Increase current brightness by 10%."
+  (interactive)
+  (let* ((cur (mh/get-current-brightness))
+         (new (round (* 1.1 cur))))
+    (if (equal new cur)
+        (setq ((new (+ cur 1)))))
+    (shell-command-to-string (concat "light -S " (number-to-string new)))
+    (message (concat "New brightness setting: " (number-to-string new) "/"
+                     (number-to-string (mh/get-max-brightness))))))
+
+(defun mh/decrease-brightness ()
+  "Decrease current brightness by 10%."
+  (interactive)
+  (let* ((cur (mh/get-current-brightness))
+         (new (round (* 0.9 cur))))
+    (if (equal new cur)
+        (setq ((new (- cur 1)))))
+    (shell-command-to-string (concat "light -S " (number-to-string new)))
+    (message (concat "New brightness setting: " (number-to-string new) "/"
+                     (number-to-string (mh/get-max-brightness))))))
+
 (provide 'c-base)
 ;;; c-base.el ends here

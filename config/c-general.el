@@ -48,7 +48,9 @@
  ;; `describe-char' can be useful to determine a face used, among
  ;; other things. However, calling it through the typical means can
  ;; disrupt this context.
- "<f9>" 'describe-char)
+ "<f9>" 'describe-char
+ "<XF86MonBrightnessDown>" 'mh/decrease-brightness
+ "<XF86MonBrightnessUp>" 'mh/increase-brightness)
 
 ;; bindings for programming modes, but agnostic to the
 ;; specific language. e.g. jump to definition
