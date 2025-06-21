@@ -58,7 +58,8 @@
  :states 'normal
  "g d" 'xref-find-definitions
  "g p" 'xref-pop-marker-stack
- "g l" 'goto-line)
+ "g l" 'goto-line
+ "g c" 'move-to-column)
 
 (general-define-key
  :keymaps 'mh/prefix-map
