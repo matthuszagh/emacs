@@ -497,5 +497,60 @@ asynchronous, since it incurs a slight delay for large variables."
     (message (concat "New brightness setting: " (number-to-string new) "/"
                      (number-to-string (mh/get-max-brightness))))))
 
+(defun mh/extract-pdf-pages ()
+  "Extract a range of pages from a PDF file using qpdf.
+Interactively prompts for input file, output file, and page
+range.  Function written by Claude AI."
+  (interactive)
+  (let* ((default-input (when (buffer-file-name)
+                          (expand-file-name (buffer-file-name))))
+         ;; Prompt for input file
+         (input-file
+          (if (fboundp 'helm-find-files)
+              (helm-read-file-name "Input PDF file: "
+                                   :initial-input default-input
+                                   :must-match t)
+            (read-file-name "Input PDF file: "
+                            nil default-input t
+                            default-input)))
+         ;; Verify input file exists and is a PDF
+         (_ (unless (file-exists-p input-file)
+              (error "Input file does not exist: %s" input-file)))
+         (_ (unless (string-match-p "\\.pdf\\'" (downcase input-file))
+              (when (not (yes-or-no-p "Input file doesn't have .pdf extension. Continue? "))
+                (error "Aborted"))))
+         ;; Prompt for output file
+         (output-file
+          (if (fboundp 'helm-find-files)
+              (helm-read-file-name "Output PDF file: "
+                                   :initial-input (concat (file-name-sans-extension input-file)
+                                                          "-extract.pdf")
+                                   :must-match nil)
+            (read-file-name "Output PDF file: "
+                            nil
+                            (concat (file-name-sans-extension input-file)
+                                    "-extract.pdf")
+                            nil)))
+         ;; Prompt for page range
+         (page-range (read-string "Page range (e.g., 1-5 or 1,3,5-7): "))
+         ;; Build the command
+         (cmd (format "qpdf --empty --pages %s %s -- %s"
+                      (shell-quote-argument input-file)
+                      page-range
+                      (shell-quote-argument output-file))))
+    ;; Execute the command
+    (message "Executing: %s" cmd)
+    (let ((result (shell-command-to-string cmd)))
+      (if (= 0 (call-process-shell-command cmd))
+          (progn
+            (message "Successfully extracted pages %s from %s to %s"
+                     page-range
+                     (file-name-nondirectory input-file)
+                     (file-name-nondirectory output-file))
+            ;; Optionally open the output file
+            (when (yes-or-no-p "Open the extracted PDF? ")
+              (find-file output-file)))
+        (error "Failed to extract pages: %s" result)))))
+
 (provide 'c-base)
 ;;; c-base.el ends here
