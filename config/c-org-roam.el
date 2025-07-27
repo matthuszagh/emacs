@@ -170,13 +170,15 @@ transformed later for appearance."
          (level (org-roam-node-level node))
          (outline-display outline-path)
          (tags-width 15)
-         (full-tags-display (org-add-props (mapconcat
-                                            (lambda (v)
-                                              (concat (or (cdr (assoc "tags" org-roam-node-template-prefixes))
-                                                          "")
-                                                      v))
-                                            (org-roam-node-tags node) " ")
-                                nil 'face 'mh-org-roam-node-tags-face))
+         (full-tags-display
+          (org-add-props
+              (mapconcat
+               (lambda (v)
+                 (concat (or (cdr (assoc "tags" org-roam-node-template-prefixes))
+                             "")
+                         v))
+               (org-roam-node-tags node) " ")
+              nil 'face 'mh-org-roam-node-tags-face))
          (tags-display (substring full-tags-display
                                   nil
                                   (min (length full-tags-display) tags-width)))
@@ -200,9 +202,11 @@ transformed later for appearance."
           (setq outline-display (append title outline-display))))
     ;; stylize parts of the outline according to custom faces
     (setq outline-display
-          (--map-last t (org-add-props it nil 'face 'mh-org-roam-node-outline-suffix-face)
-	              (--map (org-add-props it nil 'face 'mh-org-roam-node-outline-prefix-face)
-                             outline-display)))
+          (--map-last
+           t (org-add-props it nil 'face 'mh-org-roam-node-outline-suffix-face)
+	   (--map
+            (org-add-props it nil 'face 'mh-org-roam-node-outline-prefix-face)
+            outline-display)))
     ;; `(length outline-display)' computes the string length of all
     ;; separators. 2 computes the maximum difference between the
     ;; string length of '...' and a headline string, in case on
@@ -244,8 +248,7 @@ transformed later for appearance."
                                  tags-width)
                               (string-to-char " "))
                  tags-display)
-        .
-        ,node))))
+        . ,node))))
 
 (defun mh/org-roam-node-find-filtered-candidate-transformer (candidates source)
   ""
@@ -267,45 +270,95 @@ transformed later for appearance."
   (org-roam-db-sync)
   (setq mh-org-roam-node-cache (mh/org-roam-node-candidates)))
 
+(defun mh/make-async-buffer-lean (process)
+  "Make the buffer associated with PROCESS lean for performance."
+  (let ((buffer (process-buffer process)))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        ;; (fundamental-mode)
+        (buffer-disable-undo)
+        (setq-local font-lock-mode nil)
+        (setq-local create-lockfiles nil)
+        (setq-local auto-save-default nil)
+        ;; (setq-local display-line-numbers nil)
+        ;; (setq-local global-hl-line-mode nil)
+        ;; (setq-local buffer-invisibility-spec t)
+        ;;(kill-all-local-variables)
+        ))))
+
 (defun mh/update-org-roam-node-cache-async ()
   "Update mh-org-roam-node-cache asynchronously."
   (interactive)
-  (async-start (lambda ()
-                 (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
-                 (load "~/.config/emacs/config/c-no-littering.el")
-                 (load "~/.config/emacs/config/c-org-roam.el")
-                 ;; Set a large open file (soft) limit so that
-                 ;; org-roam-db-sync does not exit early complaining
-                 ;; about too many open files.
-                 (let ((nfiles (length (directory-files org-roam-directory nil "\\.org\\'"))))
-                   (shell-command-to-string (concat "prlimit --nofile=" (number-to-string (* 10 nfiles))
-                                                    ": --pid " (number-to-string (emacs-pid)))))
-                 ;; Minimize the time this update locks the database,
-                 ;; which prevents use.
-                 (let* ((original-file org-roam-db-location)
-                        (org-roam-db-location
-                         (concat (file-name-directory original-file)
-                                 "org-roam.new.db")))
-                   (copy-file original-file org-roam-db-location t)
-                   ;; Disable `find-file-hook's prior to performing a
-                   ;; sync, since this performs a lot of unnecessary
-                   ;; excess tasks.
-                   (let ((find-file-hook nil))
-                     ;; The database sometimes does not update
-                     ;; correctly when a full from-scratch sync is not
-                     ;; performed. So, we force a complete resync.
-                     (org-roam-db-sync t))
-                   (rename-file org-roam-db-location original-file t))
-                 (mh/org-roam-node-candidates))
-               (lambda (result)
-                 (setq mh-org-roam-node-cache result)
-                 ;; mark cache file out of date to be updated when Emacs is idle
-                 (setq mh-org-roam-node-cache-save-file-out-of-date t)
-                 (message "mh/update-org-roam-node-cache-async complete"))))
+  (let ((process
+         (async-start
+          (lambda ()
+            (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
+            (load "~/.config/emacs/config/c-no-littering.el")
+            (load "~/.config/emacs/config/c-org-roam.el")
+            (custom-set-variables
+             ;; Disable cache persistance between Emacs sessions. This
+             ;; seems to interfere with the org-roam node cache. In
+             ;; fact, org-persist seems to be the source of all sorts
+             ;; of woes. For example, I was constantly running into an
+             ;; issue in which tramp would try to connect to a remote
+             ;; host when seemingly unrelated command was run (like
+             ;; closing emacs). This was caused by the org-persist
+             ;; cache, which is located in ~/.cache/org-persist.
+             '(org-element-cache-persistent nil))
+            ;; Set a large open file (soft) limit so that
+            ;; org-roam-db-sync does not exit early complaining about
+            ;; too many open files.
+            (let ((nfiles
+                   (length (directory-files org-roam-directory nil
+                                            "\\.org\\'"))))
+              (shell-command-to-string
+               (concat "prlimit --nofile="
+                       (number-to-string (* 10 nfiles))
+                       ": --pid " (number-to-string (emacs-pid)))))
+            ;; Minimize the time this update locks the database, which
+            ;; prevents use.
+            (let* ((original-file org-roam-db-location)
+                   (org-roam-db-location
+                    (concat (file-name-directory original-file)
+                            "org-roam.new.db")))
+              (copy-file original-file org-roam-db-location t)
+              ;; Disable `find-file-hook's prior to performing a sync,
+              ;; since this performs a lot of unnecessary excess
+              ;; tasks.
+              (let ((find-file-hook nil)
+                    (org-mode-hook nil))
+                ;; The database sometimes does not update correctly
+                ;; when a full from-scratch sync is not performed. So,
+                ;; we force a complete resync.
+                (org-roam-db-sync t))
+              (rename-file org-roam-db-location original-file t))
+            ;; copy any warnings to the parent Emacs instance
+            (let ((buf (get-buffer "*Warnings*"))
+                  (warnings nil))
+              (if buf
+                  (with-current-buffer buf
+                    (setq warnings (buffer-string))))
+              (list (mh/org-roam-node-candidates) warnings)))
+          (lambda (result)
+            (setq mh-org-roam-node-cache (car result))
+            ;; mark cache file out of date to be updated when Emacs is
+            ;; idle
+            (setq mh-org-roam-node-cache-save-file-out-of-date t)
+            ;; display any warnings from the child process
+            (if (cadr result)
+                (with-current-buffer (get-buffer-create "*Warnings*")
+                  ;; *Warnings* buffer is normally
+                  ;; read-only. Temporarily disable this.
+                  (let ((buffer-read-only nil))
+                    (goto-char (point-max))
+                    (insert (cadr result)))))
+            (message
+             "mh/update-org-roam-node-cache-async complete")))))
+    (mh/make-async-buffer-lean process)))
 
 ;; update cache file when Emacs is idle
 (run-with-idle-timer
- 30 t
+ 60 t
  (lambda ()
    (if mh-org-roam-node-cache-save-file-out-of-date
        (progn
@@ -423,23 +476,13 @@ transformed later for appearance."
 
 ;; Load cache to file after Emacs initialization.
 (add-hook 'after-init-hook (lambda ()
-                             (load mh-org-roam-node-cache-save-file)))
+                             (if (file-exists-p mh-org-roam-node-cache-save-file)
+                                 (load mh-org-roam-node-cache-save-file)
+                               (mh//maybe-update-org-roam-node-cache))))
 ;; ;; Update node cache after Emacs initialization.
 ;; (add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)
 
 ;; TODO persist the node cache across sessions.
-
-(defun mh/org-roam-screenshot (fname)
-  "Take a screenshot and save it to the wiki data folder."
-  (interactive "sFile name (excluding .png extension): ")
-  (let ((fpath (expand-file-name
-                (concat org-roam-directory "/data/" fname ".png"))))
-    (if (and (file-exists-p fpath)
-             (not (string-equal (read-string "Overwrite [y/n]?: ") "y")))
-        (display-warning :warning
-          (concat "File " fpath " already exists\n"))
-      (call-process "import" nil "*ImageMagick import*" nil fpath)
-      (mh/org-insert-file-image fpath))))
 
 (provide 'c-org-roam)
 ;;; c-org-roam.el ends here
