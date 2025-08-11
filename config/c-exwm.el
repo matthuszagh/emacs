@@ -8,7 +8,6 @@
     (straight-use-package 'exwm))
 
 (require 'exwm)
-(require 'exwm-config)
 
 ;;(setq exwm-workspace-number 3)
 (setq mh--exwm-window-pixel-delta 100)
@@ -83,52 +82,55 @@
 ;;         ([y] . [?\C-c])
 ;;         ([p] . [?\C-v])))
 
-
-(exwm-enable)
-;; Don't send C-g to window in line mode.
-(define-key exwm-mode-map (kbd "C-g") 'keyboard-quit)
-
 (require 'exwm-randr)
 
 (defun exwm-change-screen-hook ()
   "Set monitor layout."
-  (if (string= "oryp4\n" (shell-command-to-string "hostname"))
-      (progn
-        (if (not (string-empty-p (shell-command-to-string "xrandr | grep \"DP-0 connected\"")))
-            (start-process-shell-command
-             "xrandr" nil (concat "xrandr --output eDP-1-1 --auto"
-                                  " --output DP-0 --above eDP-1-1"
-                                  " --output DP-2 --right-of DP-0"
-                                  " && xrandr --setmonitor external auto DP-0,DP-2")))
-        (setq exwm-randr-workspace-monitor-plist '(0 "eDP-1-1" 1 "DP-0")))
-    (if (string= "mbp\n" (shell-command-to-string "hostname"))
-        (progn
-          (if (not (string-empty-p (shell-command-to-string "xrandr | grep \"HDMI2 connected\"")))
-              (start-process-shell-command
-               "xrandr" nil (concat "xrandr --output eDP1 --auto"
-                                    " --output HDMI2 --above eDP1 --mode 3840x2160")))
-          (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI2")))
-      (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
-          (progn
-            (custom-set-variables
-             '(exwm-workspace-number 3)
-             '(exwm-randr-workspace-monitor-plist '(0 "DP-1" 1 "DP-2" 2 "DP-3")))
-            (start-process-shell-command
-             "xrandr" nil (concat "xrandr --output DP-1 --rotate normal"
-                                  " --output DP-2 --rotate left --below DP-1"
-                                  " --output DP-3  --rotate left --right-of DP-2")))
-        (if (string= "st5\n" (shell-command-to-string "hostname"))
-            (progn
-              (custom-set-variables
-               '(exwm-workspace-number 1))))))))
+  (cond
+   ((string= "oryp4\n" (shell-command-to-string "hostname"))
+    (if (not (string-empty-p (shell-command-to-string "xrandr | grep \"DP-0 connected\"")))
+        (start-process-shell-command
+         "xrandr" nil (concat "xrandr --output eDP-1-1 --auto"
+                              " --output DP-0 --above eDP-1-1"
+                              " --output DP-2 --right-of DP-0"
+                              " && xrandr --setmonitor external auto DP-0,DP-2"))))
+   ((string= "mbp\n" (shell-command-to-string "hostname"))
+    (if (not (string-empty-p (shell-command-to-string "xrandr | grep \"HDMI2 connected\"")))
+        (start-process-shell-command
+         "xrandr" nil (concat "xrandr --output eDP1 --auto"
+                              " --output HDMI2 --above eDP1 --mode 3840x2160"))))
+   ((string= "ryzen3950\n" (shell-command-to-string "hostname"))
+    (start-process-shell-command
+     "xrandr" nil (concat "xrandr --output DP-1 --mode 3840x2160 --rotate normal --primary"
+                          " --output DP-2 --mode 3840x2160 --rotate left --below DP-1"
+                          " --output DP-3 --mode 3840x2160 --rotate left --right-of DP-2")))))
 
-(exwm-change-screen-hook)
-(add-hook 'exwm-init-hook 'exwm-change-screen-hook)
+;; set workspace number and monitor list
+(cond
+ ((string= "oryp4\n" (shell-command-to-string "hostname"))
+  ;; we must use setq so that they're set immediately and before exwm initializes
+  (setq exwm-workspace-number 2)
+  (setq exwm-randr-workspace-monitor-plist '(0 "eDP-1-1" 1 "DP-0")))
+ ((string= "mbp\n" (shell-command-to-string "hostname"))
+  (setq exwm-workspace-number 2)
+  (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI2")))
+ ((string= "ryzen3950\n" (shell-command-to-string "hostname"))
+  (setq exwm-workspace-number 3)
+  (setq exwm-randr-workspace-monitor-plist '(0 "DP-1" 1 "DP-2" 2 "DP-3")))
+ ((string= "st5\n" (shell-command-to-string "hostname"))
+  (setq exwm-workspace-number 1)))
+
+(exwm-wm-mode)
+;; Don't send C-g to window in line mode.
+(define-key exwm-mode-map (kbd "C-g") 'keyboard-quit)
+
+;; (exwm-change-screen-hook)
+;; (add-hook 'exwm-init-hook 'exwm-change-screen-hook)
 ;; ;; TODO breaks during screen saver
-;; (add-hook 'exwm-randr-screen-change-hook 'exwm-change-screen-hook)
-(add-hook 'exwm-randr-screen-change-hook 'exwm-randr-refresh)
+(add-hook 'exwm-randr-screen-change-hook 'exwm-change-screen-hook)
+;; (add-hook 'exwm-randr-screen-change-hook 'exwm-randr-refresh)
 
-(exwm-randr-enable)
+(exwm-randr-mode 1)
 
 ;; stop exwm from catching SPC leader key.
 ;; the double whitespace is intentional
