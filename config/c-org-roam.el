@@ -66,38 +66,39 @@ time if the contents of the node changed.")
 ;;                            (add-hook 'before-save-hook
 ;;                                      'mh//org-update-last-modified 0 t)))
 
-(custom-set-variables `(org-roam-capture-templates
-                        `(("d" "default" plain "%?"
-                           :if-new
-                           ;; slug is a suitable converted filename (e.g. spaces
-                           ;; converted to underscores)
-                           (file+head "${slug}.org"
-                                      ,(concat ":PROPERTIES:\n"
-                                               ":ID: %(org-id-new)\n"
-                                               ":END:\n"
-                                               "#+TITLE: ${title}\n"
-                                               "#+filetags: \n"
-                                               "#+CREATED: %(mh/time-stamp)\n"
-                                               "#+MODIFIED: %(mh/time-stamp)\n"))
-                           :unnarrowed t)
-                          ("r" "ref" plain ""
-                           :if-new
-                           (file+head "${slug}.org"
-                                      ,(concat ":PROPERTIES:\n"
-                                               ":ID: %(org-id-new)\n"
-                                               ":ROAM_REFS: cite:${citekey}\n"
-                                               ":END:\n"
-                                               "#+TITLE: ${title}\n"
-                                               "#+filetags:\n"
-                                               "#+CREATED: %(mh/time-stamp)\n"
-                                               "#+MODIFIED: %(mh/time-stamp)\n\n"
-                                               "* outline\n"
-                                               ":PROPERTIES:\n"
-                                               ":NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")\n"
-                                               ":END:\n"
-                                               "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
-                           :unnarrowed t)))
-                      `(org-roam-directory "~/doc/notes/wiki"))
+(custom-set-variables
+ `(org-roam-capture-templates
+   `(("d" "default" plain "%?"
+      :if-new
+      ;; slug is a suitable converted filename (e.g. spaces
+      ;; converted to underscores)
+      (file+head "${slug}.org"
+                 ,(concat ":PROPERTIES:\n"
+                          ":ID: %(org-id-new)\n"
+                          ":END:\n"
+                          "#+TITLE: ${title}\n"
+                          "#+filetags: \n"
+                          "#+CREATED: %(mh/time-stamp)\n"
+                          "#+MODIFIED: %(mh/time-stamp)\n"))
+      :unnarrowed t)
+     ("r" "ref" plain ""
+      :if-new
+      (file+head "${slug}.org"
+                 ,(concat ":PROPERTIES:\n"
+                          ":ID: %(org-id-new)\n"
+                          ":ROAM_REFS: cite:${citekey}\n"
+                          ":END:\n"
+                          "#+TITLE: ${title}\n"
+                          "#+filetags:\n"
+                          "#+CREATED: %(mh/time-stamp)\n"
+                          "#+MODIFIED: %(mh/time-stamp)\n\n"
+                          "* outline\n"
+                          ":PROPERTIES:\n"
+                          ":NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")\n"
+                          ":END:\n"
+                          "%(mh/pdf-outline-to-org-headline \"%(orb-process-file-field \"${citekey}\")\" 1)\n"))
+      :unnarrowed t)))
+ `(org-roam-directory "~/doc/notes/wiki"))
 
 (defface mh-org-roam-node-outline-prefix-face
   '((t :extend t))
@@ -144,14 +145,22 @@ Taken from https://stackoverflow.com/a/16247032/5710525."
           (setq outline (append title outline))))
     outline))
 
+(defun mh//org-roam-node-property (node property)
+  "Return value of PROPERTY in NODE properties if it exists.
+Otherwise, return nil."
+  (cdr (assoc property (org-roam-node-properties node))))
+
 (defun mh/org-roam-node-real-display-match (node)
   "Take an org-roam NODE and compute a (DISPLAY . REAL) whose sole
 purpose is for matching and to be fast.  Display will be further
 transformed later for appearance."
-  (let ((display (mapconcat (lambda (x) x)
-                            (append (mh/org-roam-node-full-path node)
-                                    (org-roam-node-tags node))
-                            " ")))
+  (let ((display (mapconcat
+                  (lambda (x) x)
+                  (append (mh/org-roam-node-full-path node)
+                          (list
+                           (mh//org-roam-node-property node "QUALIFIER"))
+                          (org-roam-node-tags node))
+                  " ")))
     `(,display . ,node)))
 
 (defun mh/org-roam-node-candidates ()
@@ -169,6 +178,10 @@ transformed later for appearance."
                                `(,(org-roam-node-title node))))
          (level (org-roam-node-level node))
          (outline-display outline-path)
+	 (qualifier (mh//org-roam-node-property node "QUALIFIER"))
+         (qualifier-string (if qualifier
+                               (concat " (" qualifier ")")))
+         (qualifier-width (length qualifier-string))
          (tags-width 15)
          (full-tags-display
           (org-add-props
@@ -188,7 +201,7 @@ transformed later for appearance."
          (window-width (mh/window-width (helm-window)))
          ;; Maximum acceptable path width. Leave room for tags and a
          ;; space between the path and tags.
-         (path-width (- window-width tags-width 1)))
+         (path-width (- window-width qualifier-width tags-width 1)))
     ;; if the current node is not the file-level node, append the file
     ;; level node to `outline-display', which otherwise isn't part of
     ;; the outline path.
@@ -226,6 +239,7 @@ transformed later for appearance."
                2)
             path-width)
         (setq outline-display (-remove-at 0 outline-display)))
+    ;; generate display string
     (let ((outline-string (car outline-display)))
       ;; The total headline path exceeded the max width, so we cut out
       ;; one or more path elements.
@@ -242,6 +256,7 @@ transformed later for appearance."
       ;; Still need to present (DISPLAY . REAL) since action needs
       ;; real.
       `(,(concat outline-string
+                 qualifier-string
                  (make-string (- window-width
                                  (length outline-string)
                                  1
@@ -263,6 +278,34 @@ transformed later for appearance."
 
 (defvar mh-org-roam-node-cache-save-file-out-of-date nil
   "`t' if cache file is out-of-date.  `nil' if up-to-date.")
+
+(defvar mh-org-roam-async-process nil
+  "Current async process for org-roam cache update.")
+
+(defvar mh-org-roam-async-paused nil
+  "Whether the async process is currently paused.")
+
+(defun mh/pause-org-roam-async-process ()
+  "Pause the org-roam async process if running."
+  (when (and mh-org-roam-async-process
+             (process-live-p mh-org-roam-async-process)
+             (not mh-org-roam-async-paused))
+    (signal-process mh-org-roam-async-process 'SIGSTOP)
+    (setq mh-org-roam-async-paused t)))
+
+(defun mh/resume-org-roam-async-process ()
+  "Resume the org-roam async process if paused."
+  (when (and mh-org-roam-async-process
+             (process-live-p mh-org-roam-async-process)
+             mh-org-roam-async-paused)
+    (signal-process mh-org-roam-async-process 'SIGCONT)
+    (setq mh-org-roam-async-paused nil)))
+
+;; Pause on any command
+(add-hook 'pre-command-hook #'mh/pause-org-roam-async-process)
+
+;; Resume when idle
+(run-with-idle-timer 2 t #'mh/resume-org-roam-async-process)
 
 (defun mh/update-org-roam-node-cache ()
   "Update mh-org-roam-node-cache."
@@ -289,9 +332,23 @@ transformed later for appearance."
 (defun mh/update-org-roam-node-cache-async ()
   "Update mh-org-roam-node-cache asynchronously."
   (interactive)
+  ;; Kill any existing process
+  (when (and mh-org-roam-async-process
+             (process-live-p mh-org-roam-async-process))
+    (kill-process mh-org-roam-async-process))
+
   (let ((process
          (async-start
           (lambda ()
+            ;; ;; By decreasing message outputs, we decrease the size of
+            ;; ;; the *emacs* buffer, which tends to cause the parent
+            ;; ;; Emacs process to become sluggish. The contents of this
+            ;; ;; buffer aren't necessary to return the node cache and
+            ;; ;; warnings to the parent emacs process.
+            ;; (custom-set-variables
+            ;;  '(inhibit-message t)
+            ;;  '(message-log-max nil))
+
             (load "~/.config/emacs/straight/repos/straight.el/bootstrap.el")
             (load "~/.config/emacs/config/c-no-littering.el")
             (load "~/.config/emacs/config/c-org-roam.el")
@@ -340,6 +397,9 @@ transformed later for appearance."
                     (setq warnings (buffer-string))))
               (list (mh/org-roam-node-candidates) warnings)))
           (lambda (result)
+            ;; Reset process variable
+            (setq mh-org-roam-async-process nil)
+            (setq mh-org-roam-async-paused nil)
             (setq mh-org-roam-node-cache (car result))
             ;; mark cache file out of date to be updated when Emacs is
             ;; idle
@@ -354,16 +414,19 @@ transformed later for appearance."
                     (insert (cadr result)))))
             (message
              "mh/update-org-roam-node-cache-async complete")))))
+    (setq mh-org-roam-async-process process)
     (mh/make-async-buffer-lean process)))
 
 ;; update cache file when Emacs is idle
-(run-with-idle-timer
- 60 t
- (lambda ()
-   (if mh-org-roam-node-cache-save-file-out-of-date
-       (progn
-         (mh//dump-vars-to-file '(mh-org-roam-node-cache) mh-org-roam-node-cache-save-file)
-         (setq mh-org-roam-node-cache-save-file-out-of-date nil)))))
+(if (file-exists-p org-roam-directory)
+    (run-with-idle-timer
+     60 t
+     (lambda ()
+       (if mh-org-roam-node-cache-save-file-out-of-date
+           (progn
+             (mh//dump-vars-to-file '(mh-org-roam-node-cache)
+                                    mh-org-roam-node-cache-save-file)
+             (setq mh-org-roam-node-cache-save-file-out-of-date nil))))))
 
 (defun mh//org-roam-node-candidate-predicate (candidate)
   ""
@@ -467,18 +530,24 @@ transformed later for appearance."
 
 ;; Update the org-roam node cache after saving, but don't do it if
 ;; we're already updating the cache.
-(add-hook 'org-mode-hook (lambda ()
-                           (add-hook 'after-save-hook
-                                     #'mh//maybe-update-org-roam-node-cache 0 t)))
+(if (file-exists-p org-roam-directory)
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (add-hook 'after-save-hook
+                          #'mh//maybe-update-org-roam-node-cache 0 t))))
+
 ;; (remove-hook 'org-mode-hook (lambda ()
 ;;                               (add-hook 'after-save-hook
 ;;                                         #'mh//maybe-update-org-roam-node-cache 0 t)))
 
 ;; Load cache to file after Emacs initialization.
-(add-hook 'after-init-hook (lambda ()
-                             (if (file-exists-p mh-org-roam-node-cache-save-file)
-                                 (load mh-org-roam-node-cache-save-file)
-                               (mh//maybe-update-org-roam-node-cache))))
+(if (file-exists-p org-roam-directory)
+    (add-hook 'after-init-hook
+              (lambda ()
+                (if (file-exists-p mh-org-roam-node-cache-save-file)
+                    (load mh-org-roam-node-cache-save-file)
+                  (mh//maybe-update-org-roam-node-cache)))))
+
 ;; ;; Update node cache after Emacs initialization.
 ;; (add-hook 'after-init-hook #'mh//maybe-update-org-roam-node-cache)
 
