@@ -68,6 +68,8 @@
  ;; with underline '_' as well. Finally, I don't use the others and I
  ;; think Org did a poor job with their emphasis marker choice.
  '(org-emphasis-alist nil)
+ ;; Don't fontify emphasis markers
+ '(org-fontify-emphasized-text nil)
  ;; Collapse/shrink all tables on startup
  '(org-startup-shrink-all-tables t)
  ;; Don't hide emphasis markers. For some reason, these are still
@@ -244,6 +246,7 @@
 ;; Run `org-self-insert-command' only if `mh/org-insert-org-entity-maybe'
 ;; returns nil.
 (advice-add 'org-self-insert-command :before-until #'mh/org-insert-org-entity-maybe)
+(advice-remove 'org-self-insert-command #'mh/org-insert-org-entity-maybe)
 
 ;; `org-adapt-indentation' indents heading contents to the beginning of the heading. This is nice
 ;; in a way, but limits the amount of horizontal space when you have deeply-nested headings.
@@ -291,6 +294,7 @@
       "latexmlc 'literal:%i' --profile=math --preload=siunitx.sty 2>/dev/null | head -c -1")
 
 (custom-set-variables
+ ;; TODO change to _standalone?
  ;; LaTeX preamble for fragments.
  '(org-format-latex-header "\\PassOptionsToPackage{usenames}{xcolor}
 \\documentclass[preview]{standalone}
@@ -313,38 +317,12 @@
 
 (defun mh//org-latex-scale (imagedata imagetype)
   "Scale inline LaTeX fragments to match the height of the surrounding text."
-  ;; TODO this function doesn't really make sense to me. However, it
-  ;; seems to work when the xserver DPI is correctly set.
-  ;;
-  ;; TODO this won't work if multiple displays are used with different
-  ;; resolutions. In that case it will use the primary display to
-  ;; calculate the DPI.
-  (let ((dpi-y (cadr (mh/dpi)))
-        (pt/in 72.27)
-        ;; We use a LaTeX font size of 10. This is set by
-        ;; `org-format-latex-header', which uses the standalone
-        ;; document class, that uses, in turn, "article" by
-        ;; default. We use this rather than the current text font
-        ;; height because the latex fragments were compiled using this
-        ;; font size. The size of a capital M in 10-point font is
-        ;; 6.88875, so we use that. To find that value, use
-        ;;
-        ;; \newlength{\mylen}
-        ;; \settoheight{\mylen}{A}
-        ;; \message{M height is \the\mylen}
-        (latex-height-pt 6.88875))
-    ;; TODO why 290 and not dpi-y?
-    (let* ((line-height-in (/ (default-font-height) 290.0))
-           (latex-height-in (/ latex-height-pt pt/in)))
-      ;; TODO Ryzen font needs to be a little bigger.
-      (if (and (string= "ryzen3950" (shell-command-to-string "echo -n $HOSTNAME"))
-               ;; Ensure we're not connected to Ryzen over ssh, in
-               ;; which case we want the smaller font. See
-               ;; https://unix.stackexchange.com/a/9607/293576.
-               (string= "" (shell-command-to-string "echo -n $SSH_CLIENT"))
-               (string= "" (shell-command-to-string "echo -n $SSH_TTY")))
-          (* 1.2 (/ line-height-in latex-height-in))
-        (* 1.0 (/ line-height-in latex-height-in))))))
+  (let* ((emacs-font-decipt (float (face-attribute 'default :height)))
+         ;; standalone document class uses article, which defaults to 10pt
+         (latex-font-decipt 100.0)
+	 ;; scale factor to equalize height of Emacs and LaTeX text
+         (scale-factor 1.14))
+    (* scale-factor (/ emacs-font-decipt latex-font-decipt))))
 
 ;; `org--get-display-dpi' returns the incorrect DPI e.g., on remote
 ;; displays. This isn't currently used in anything - I've setup latex
@@ -427,11 +405,9 @@
       '((heading . t)
         (plain-list-item . auto)))
 
-;; set the column view format to include effort
-(setq org-columns-default-format (concat "%60ITEM(Task) "
-                                         ;; "%TODO %3PRIORITY "
-                                         "%17Effort(Estimated Effort){:} "
-                                         "%CLOCKSUM"))
+(custom-set-variables
+ '(org-columns-default-format (concat "%60ITEM(Task) "
+                                      "%CLOCKSUM")))
 ;; keep the same column format in the agenda columns view
 (setq org-agenda-overriding-columns-format org-columns-default-format)
 
@@ -813,6 +789,101 @@ org-capture instead."
            (equal (org-element-property :language (org-element-at-point))
                   "latex")
            (texmathp))))
+
+(defun mh/org-screenshot (fname)
+  "Take a screenshot and save it to the data subdirectory of the current directory."
+  (interactive "sFile name (excluding .png extension): ")
+  (let ((fpath (expand-file-name
+                (concat (file-name-directory buffer-file-name)
+                        "/data/" fname ".png"))))
+    (if (and (file-exists-p fpath)
+             (not (string-equal (read-string "Overwrite [y/n]?: ") "y")))
+        (display-warning :warning
+          (concat "File " fpath " already exists\n"))
+      (call-process "import" nil "*ImageMagick import*" nil fpath)
+      (mh/org-insert-file-image fpath))))
+
+(defun mh/org-clocktable-problem-split-formatter (ipos tables params)
+  "Custom formatter for clocktable to separate time spent on problems/exercises vs. everything else."
+  (let ((problem-time 0)
+        (non-problem-time 0)
+        (case-fold-search t)) ;; case-insensitive matching
+    (dolist (row (nth 2 tables)) ;; row = (level headline tags time ...)
+      (let* ((headline (nth 1 row))
+             (time (nth 3 row))
+             ;; This assumes headline includes the full path like "Chapter > Section > Exercises"
+             ;; You can inspect this in the default clocktable output
+             )
+        (if (string-match "\\b\\(problems\\|exercises\\)\\b" headline)
+            (setq problem-time (+ problem-time time))
+          (setq non-problem-time (+ non-problem-time time)))))
+    (insert "* Clock summary\n")
+    (insert (format "- Problems/Exercises: %s\n" (org-duration-from-minutes problem-time)))
+    (insert (format "- Reading/Notes:      %s\n" (org-duration-from-minutes non-problem-time)))
+    (insert (format "- Total:              %s\n" (org-duration-from-minutes (+ problem-time non-problem-time))))))
+
+(defun mh/org-clocktable-formatter (ipos tables params)
+  (let ((problem-time 0)
+        (exercise-time 0)
+        (notes-time 0)
+        (summary-time 0))))
+
+(defun mh/org-sort-top-level-headings ()
+  "Sort all top-level headings in the current Org buffer alphanumerically.
+The sort is case-insensitive and ignores TODO keywords, priorities,
+tags, and statistics cookies. Content before the first heading is
+preserved.  Written by Claude Opus
+4.5 (https://claude.ai/chat/625fd895-b7b4-4fc1-8f6a-25412a700b83)."
+  (interactive)
+  (let (entries preamble)
+    (save-excursion
+      ;; Collect preamble (content before first heading)
+      (goto-char (point-min))
+      (setq preamble
+            (if (re-search-forward "^\\* " nil t)
+                (buffer-substring (point-min) (match-beginning 0))
+              (user-error "No top-level headings found")))
+      ;; Collect all top-level entries (heading + entire subtree)
+      (goto-char (point-min))
+      (while (re-search-forward "^\\* \\(.+\\)$" nil t)
+        (let ((title (match-string-no-properties 1))
+              (beg (match-beginning 0))
+              end)
+          (save-excursion
+            (setq end (if (re-search-forward "^\\* " nil t)
+                          (match-beginning 0)
+                        (point-max))))
+          (push (cons (mh//org-sort--extract-plain-title title)
+                      (buffer-substring beg end))
+                entries))))
+    ;; Sort alphanumerically by plain title (case-insensitive)
+    (setq entries (sort entries (lambda (a b)
+                                  (string< (downcase (car a))
+                                           (downcase (car b))))))
+    ;; Replace buffer contents
+    (erase-buffer)
+    (insert preamble)
+    (dolist (entry entries)
+      (insert (cdr entry)))))
+
+(defun mh//org-sort--extract-plain-title (heading-text)
+  "Extract plain title from HEADING-TEXT, removing Org metadata.
+Strips TODO keywords, priority cookies, tags, and statistics cookies.
+Written by Claude Opus
+4.5 (https://claude.ai/chat/625fd895-b7b4-4fc1-8f6a-25412a700b83)."
+  (let ((text heading-text))
+    ;; Remove TODO keywords (matches org-todo-regexp if available)
+    (when (and (boundp 'org-todo-regexp) org-todo-regexp)
+      (setq text (replace-regexp-in-string
+                  (concat "^" org-todo-regexp " +") "" text)))
+    ;; Remove priority cookie [#A], [#B], etc.
+    (setq text (replace-regexp-in-string "^\\[#[A-Z]\\] +" "" text))
+    ;; Remove statistics cookies [1/3] or [50%]
+    (setq text (replace-regexp-in-string "\\[\\(?:[0-9]+/[0-9]+\\|[0-9]+%\\)\\] *" "" text))
+    ;; Remove tags at end :tag1:tag2:
+    (setq text (replace-regexp-in-string "\\s-+:[[:alnum:]_@#%:]+:\\s-*$" "" text))
+    ;; Trim whitespace
+    (string-trim text)))
 
 (provide 'c-org)
 ;;; c-org.el ends here

@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(if (featurep 'straight)
+(if (fboundp 'straight-use-package)
     (straight-use-package 'exwm))
 
 (require 'exwm)
@@ -84,6 +84,14 @@
 
 (require 'exwm-randr)
 
+(defun mh/connected-displayports ()
+  "Return connected DisplayPort names sorted by number (lowest first)."
+  (sort (split-string
+         (shell-command-to-string
+          "xrandr | grep -oP 'DisplayPort-\\d+(?= connected)'")
+         "\n" t)
+        #'string<))
+
 (defun exwm-change-screen-hook ()
   "Set monitor layout."
   (cond
@@ -100,10 +108,16 @@
          "xrandr" nil (concat "xrandr --output eDP1 --auto"
                               " --output HDMI2 --above eDP1 --mode 3840x2160"))))
    ((string= "ryzen3950\n" (shell-command-to-string "hostname"))
-    (start-process-shell-command
-     "xrandr" nil (concat "xrandr --output DP-1 --mode 3840x2160 --rotate normal --primary"
-                          " --output DP-2 --mode 3840x2160 --rotate left --below DP-1"
-                          " --output DP-3 --mode 3840x2160 --rotate left --right-of DP-2")))))
+    (let ((monitors (mh/connected-displayports)))
+      (when (>= (length monitors) 2)
+        (setq exwm-randr-workspace-monitor-plist
+              (cl-loop for m in monitors for i from 0
+                       append (list i m)))
+        (start-process-shell-command
+         "xrandr" nil
+         (concat "xrandr --output " (nth 0 monitors) " --mode 3840x2160 --rotate left --primary"
+                 " --output " (nth 1 monitors) " --mode 3840x2160"
+                 " --rotate left --right-of " (nth 0 monitors))))))))
 
 ;; set workspace number and monitor list
 (cond
@@ -112,11 +126,10 @@
   (setq exwm-workspace-number 2)
   (setq exwm-randr-workspace-monitor-plist '(0 "eDP-1-1" 1 "DP-0")))
  ((string= "mbp\n" (shell-command-to-string "hostname"))
-  (setq exwm-workspace-number 2)
-  (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI2")))
+  (setq exwm-workspace-number 1)
+  (setq exwm-randr-workspace-monitor-plist '(0 "eDP1")))
  ((string= "ryzen3950\n" (shell-command-to-string "hostname"))
-  (setq exwm-workspace-number 3)
-  (setq exwm-randr-workspace-monitor-plist '(0 "DP-1" 1 "DP-2" 2 "DP-3")))
+  (setq exwm-workspace-number 2))
  ((string= "st5\n" (shell-command-to-string "hostname"))
   (setq exwm-workspace-number 1)))
 
@@ -168,10 +181,14 @@ TODO allow this to work for different machines and for individual displays."
                (equal rotate "normal")))
       (error "Rotate must be 'left' or 'normal'.")
     (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
-        (start-process-shell-command
-         "xrandr" nil (concat "xrandr --output DisplayPort-0 --rotate "
-                              rotate
-                              " --output DisplayPort-1 --right-of DisplayPort-0 --rotate left")))))
+        (let ((monitors (mh/connected-displayports)))
+          (when (>= (length monitors) 2)
+            (start-process-shell-command
+             "xrandr" nil (concat "xrandr --output " (nth 0 monitors) " --rotate "
+                                  rotate
+                                  " --output " (nth 1 monitors)
+                                  " --right-of " (nth 0 monitors)
+                                  " --rotate left")))))))
 
 (provide 'c-exwm)
 ;;; c-exwm.el ends here

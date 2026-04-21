@@ -76,17 +76,19 @@ parameters and noweb references."
 
 (defun mh//convert-latex-blocks-for-latex-export ()
   "Convert LaTeX src blocks in the current buffer to export blocks."
-  (org-api/map-nodes-recursive-in-current-buffer 'mh//convert-latex-src-block-to-export-block
-                                                 '((:and src-block
-                                                    (:language "latex")))))
+  (org-api/map-nodes-recursive-in-current-buffer
+   'mh//convert-latex-src-block-to-export-block
+   '((:and src-block
+      (:language "latex")))))
 
 (defun mh//latex-export-remove-results-blocks (backend)
   "Remove results blocks.
 BACKEND is the export backend."
   (when (org-export-derived-backend-p backend 'latex)
-    (org-api/map-nodes-recursive-in-current-buffer 'org-api/delete-node
-                                                   '((:and special-block
-                                                      (:type "results"))))))
+    (org-api/map-nodes-recursive-in-current-buffer
+     'org-api/delete-node
+     '((:and special-block
+        (:type "results"))))))
 
 (defun mh//remove-file-link-descriptions ()
   "Remove file link descriptions."
@@ -231,8 +233,9 @@ holding export options."
 (defun mh/latex-export-filter-final-output-remove-results (text backend info)
   "Remove all results environments, but keep their content."
   (when (org-export-derived-backend-p backend 'latex)
-    (replace-regexp-in-string "\\\\end{results}\n" ""
-                              (replace-regexp-in-string "\\\\begin{results}\n" "" text))))
+    (replace-regexp-in-string
+     "\\\\end{results}\n" ""
+     (replace-regexp-in-string "\\\\begin{results}\n" "" text))))
 
 (defun mh/latex-export-filter-final-output-use-fancyvrb (text backend info)
   "Replace verbatim with Verbatim."

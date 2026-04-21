@@ -17,6 +17,7 @@
                                        (setq undo-tree-visualizer-diff t)))
 
 (global-undo-tree-mode)
+(global-undo-tree-mode -1)
 ;; Save undo information persistently (i.e. across sessions)
 (setq undo-tree-auto-save-history t)
 (setq undo-tree-visualizer-timestamps t)

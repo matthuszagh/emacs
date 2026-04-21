@@ -170,19 +170,14 @@ transformed later for appearance."
 
 (defun mh//org-roam-node-find-node-filter (node-display-real)
   "Outline string to display for an org-roam node."
-  ;; `outline-display' is a list of each headline path in the outline
-  ;; we display. We initialize it to the full path and then remove
-  ;; elements as needed.
   (let* ((node (cdr node-display-real))
          (outline-path (append (org-roam-node-olp node)
                                `(,(org-roam-node-title node))))
          (level (org-roam-node-level node))
          (outline-display outline-path)
-	 (qualifier (mh//org-roam-node-property node "QUALIFIER"))
+         (qualifier (mh//org-roam-node-property node "QUALIFIER"))
          (qualifier-string (if qualifier
                                (concat " (" qualifier ")")))
-         (qualifier-width (length qualifier-string))
-         (tags-width 15)
          (full-tags-display
           (org-add-props
               (mapconcat
@@ -191,17 +186,7 @@ transformed later for appearance."
                              "")
                          v))
                (org-roam-node-tags node) " ")
-              nil 'face 'mh-org-roam-node-tags-face))
-         (tags-display (substring full-tags-display
-                                  nil
-                                  (min (length full-tags-display) tags-width)))
-         ;; Total helm window width. Using the currently active window
-         ;; instead of the helm window can use the width of the
-         ;; minibuffer instead.
-         (window-width (mh/window-width (helm-window)))
-         ;; Maximum acceptable path width. Leave room for tags and a
-         ;; space between the path and tags.
-         (path-width (- window-width qualifier-width tags-width 1)))
+              nil 'face 'mh-org-roam-node-tags-face)))
     ;; if the current node is not the file-level node, append the file
     ;; level node to `outline-display', which otherwise isn't part of
     ;; the outline path.
@@ -217,52 +202,16 @@ transformed later for appearance."
     (setq outline-display
           (--map-last
            t (org-add-props it nil 'face 'mh-org-roam-node-outline-suffix-face)
-	   (--map
+           (--map
             (org-add-props it nil 'face 'mh-org-roam-node-outline-prefix-face)
             outline-display)))
-    ;; `(length outline-display)' computes the string length of all
-    ;; separators. 2 computes the maximum difference between the
-    ;; string length of '...' and a headline string, in case on
-    ;; headline is shorter than 3 chars.
-    (while (and (>= (+ (-sum (cl-map 'list 'length outline-display))
-                       (length outline-display)
-                       2)
-                    path-width)
-                ;; Don't remove the first or last headline path. Deal
-                ;; with this case later.
-                (>= (length outline-display) 2))
-      (setq outline-display (-remove-at 1 outline-display)))
-    ;; Remove the first headline path if the first and last
-    ;; collectively exceed `path-width'.
-    (if (>= (+ (-sum (cl-map 'list 'length outline-display))
-               (length outline-display)
-               2)
-            path-width)
-        (setq outline-display (-remove-at 0 outline-display)))
-    ;; generate display string
-    (let ((outline-string (car outline-display)))
-      ;; The total headline path exceeded the max width, so we cut out
-      ;; one or more path elements.
-      (if (< (length outline-display)
-             (length outline-path))
-          (if (eq (length outline-display) 1)
-              (concat ".../" outline-string)
-            (setq outline-string (concat outline-string "/..."))))
-      (let ((index 1))
-        (while (< index (length outline-display))
-	  (setq outline-string (concat outline-string "/"
-                                       (nth index outline-display)))
-          (setq index (+ 1 index))))
-      ;; Still need to present (DISPLAY . REAL) since action needs
-      ;; real.
+    ;; generate display string - no truncation, just join with "/"
+    (let ((outline-string (mapconcat 'identity outline-display "/")))
+      ;; Still need to present (DISPLAY . REAL) since action needs real.
       `(,(concat outline-string
                  qualifier-string
-                 (make-string (- window-width
-                                 (length outline-string)
-                                 1
-                                 tags-width)
-                              (string-to-char " "))
-                 tags-display)
+                 (when (not (string-empty-p full-tags-display))
+                   (concat " " full-tags-display)))
         . ,node))))
 
 (defun mh/org-roam-node-find-filtered-candidate-transformer (candidates source)
@@ -430,10 +379,11 @@ transformed later for appearance."
 
 (defun mh//org-roam-node-candidate-predicate (candidate)
   ""
-  (let ((node (cdr candidate)))
+  ;; Use the display string which includes qualifier
+  (let ((display (car candidate)))
     ;; TODO
     ;; - consider aliases
-    (helm-mm-3-match (org-roam-node-title node))))
+    (helm-mm-3-match display)))
 
 (defun mh//org-roam-node-candidate-filter (candidates)
   ""
@@ -494,7 +444,9 @@ transformed later for appearance."
                  :candidate-transformer filter-fn
                  :requires-pattern 1
                  :match-dynamic t
-                 :filtered-candidate-transformer '(mh/org-roam-node-find-filtered-candidate-transformer))
+                 :multiline t
+                 :filtered-candidate-transformer
+                 '(mh/org-roam-node-find-filtered-candidate-transformer))
               ,(helm-build-dummy-source "new node"
                  :action (lambda (node)
                            (org-roam-capture-

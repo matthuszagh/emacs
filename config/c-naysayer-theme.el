@@ -4,6 +4,9 @@
 
 ;;; Code:
 
+;; TODO this should be guarded such that I can load this file and then
+;; separately apply the theme with `load-theme'.
+
 (if (featurep 'straight)
     (straight-use-package 'naysayer-theme))
 

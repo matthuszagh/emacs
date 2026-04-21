@@ -13,6 +13,7 @@
 (require 'elpy)
 
 (add-hook 'python-mode-hook #'elpy-mode)
+;;(remove-hook 'python-mode-hook #'elpy-mode)
 (elpy-enable)
 
 (provide 'c-elpy)

@@ -94,5 +94,15 @@
   (if (and beg end)
       (replace-region-contents beg end 'mh//simplify-tex-string)))
 
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (visual-line-mode 1)
+            (auto-fill-mode -1)))
+
+(add-hook 'latex-mode-hook
+          (lambda ()
+            (visual-line-mode 1)
+            (auto-fill-mode -1)))
+
 (provide 'c-auctex)
 ;;; c-auctex.el ends here

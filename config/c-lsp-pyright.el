@@ -5,13 +5,14 @@
 ;;; Code:
 
 (if (featurep 'straight)
-    (straight-use-package '(lsp-pyright :host github :repo "emacs-lsp/lsp-pyright")))
+    (straight-use-package '(lsp-pyright :host github
+                                        :repo "emacs-lsp/lsp-pyright")))
 
 (require 'lsp-pyright)
 
-(add-hook 'python-mode (lambda ()
-                         (require 'lsp-pyright)
-                         (lsp)))
+;; (add-hook 'python-mode (lambda ()
+;;                          (require 'lsp-pyright)
+;;                          (lsp)))
 
 (custom-set-variables
  '(lsp-pyright-python-executable-cmd "python3"))

@@ -271,7 +271,13 @@
        :states 'normal
        :keymaps 'pdf-view-mode-map
        "j" 'mh/pdf-view-scroll-down
+       "J" (lambda ()
+             (interactive)
+             (pdf-view-next-line-or-next-page 10))
        "k" 'mh/pdf-view-scroll-up
+       "K" (lambda ()
+             (interactive)
+             (pdf-view-previous-line-or-previous-page 10))
        "SPC" 'mh/command-prefix
        "g l" 'pdf-view-goto-page
        "l" 'image-forward-hscroll
@@ -527,10 +533,10 @@
        "C-d" 'helm-ff-run-delete-file
        "C-s" 'helm-ff-run-grep
        ;; open file in adjacent window
-       "C-o" 'helm-ff-run-switch-other-window
+       ;; "C-o" 'helm-ff-run-switch-other-window
        "C-c" 'helm-ff-run-copy-file
        "C-r" 'helm-ff-run-rename-file
-       "C-y" 'helm-ff-run-symlink-file
+       "C-y" 'yank
        "C-t" 'helm-ff-run-ediff-file
        "C-p" 'helm-ff-run-browse-project
        ;; display file properties
@@ -781,25 +787,25 @@
       "S" 'magit-list-repositories)
   (mh:log-init "ERROR" "attempted to set 'magit keybindings without loading 'c-magit"))
 
-(if (featurep 'c-git-timemachine)
-    (general-def mh/prefix-prog-map
-      "t" 'git-timemachine)
-  (mh:log-init "ERROR" "attempted to set 'git-timemachine keybindings without loading 'c-git-timemachine"))
+;;(if (featurep 'c-git-timemachine)
+;;    (general-def mh/prefix-prog-map
+;;      "t" 'git-timemachine)
+;;  (mh:log-init "ERROR" "attempted to set 'git-timemachine keybindings without loading 'c-git-timemachine"))
 
-(if (featurep 'c-verilog-mode)
-    (progn
-      (localleader :keymaps 'verilog-mode-map
-        "c" (lambda (cmd)
-	      (interactive
-	       (list
-	        (compilation-read-command compile-command)))
-	      (compile cmd t)))
-      (general-define-key
-       :keymaps 'verilog-mode-map
-       :states 'normal
-       "g d" 'dumb-jump-go
-       "g p" 'dumb-jump-back))
-  (mh:log-init "ERROR" "attempted to set 'verilog-mode keybindings without loading 'c-verilog-mode"))
+;; (if (featurep 'c-verilog-mode)
+;;     (progn
+;;       (localleader :keymaps 'verilog-mode-map
+;;         "c" (lambda (cmd)
+;; 	      (interactive
+;; 	       (list
+;; 	        (compilation-read-command compile-command)))
+;; 	      (compile cmd t)))
+;;       (general-define-key
+;;        :keymaps 'verilog-mode-map
+;;        :states 'normal
+;;        "g d" 'dumb-jump-go
+;;        "g p" 'dumb-jump-back))
+;;   (mh:log-init "ERROR" "attempted to set 'verilog-mode keybindings without loading 'c-verilog-mode"))
 
 (if (featurep 'c-define-word)
     (general-define-key

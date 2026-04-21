@@ -230,6 +230,297 @@ The same as `mh/pdf-view-scroll-down' but for scrolling up."
       (insert (concat cmd "\n")))
     (start-process-shell-command "ocr-pdf" buffer cmd)))
 
+(defun mh/extract-pdf-pages ()
+  "Extract a range of pages from a PDF file using qpdf.
+Interactively prompts for input file, output file, and page
+range.  Function written by Claude AI."
+  (interactive)
+  (let* ((default-input (when (buffer-file-name)
+                          (expand-file-name (buffer-file-name))))
+         ;; Prompt for input file
+         (input-file
+          (if (fboundp 'helm-find-files)
+              (helm-read-file-name "Input PDF file: "
+                                   :initial-input default-input
+                                   :must-match t)
+            (read-file-name "Input PDF file: "
+                            nil default-input t
+                            default-input)))
+         ;; Verify input file exists and is a PDF
+         (_ (unless (file-exists-p input-file)
+              (error "Input file does not exist: %s" input-file)))
+         (_ (unless (string-match-p "\\.pdf\\'" (downcase input-file))
+              (when (not (yes-or-no-p "Input file doesn't have .pdf extension. Continue? "))
+                (error "Aborted"))))
+         ;; Prompt for output file
+         (output-file
+          (if (fboundp 'helm-find-files)
+              (helm-read-file-name "Output PDF file: "
+                                   :initial-input (concat (file-name-sans-extension input-file)
+                                                          "-extract.pdf")
+                                   :must-match nil)
+            (read-file-name "Output PDF file: "
+                            nil
+                            (concat (file-name-sans-extension input-file)
+                                    "-extract.pdf")
+                            nil)))
+         ;; Prompt for page range
+         (page-range (read-string "Page range (e.g., 1-5 or 1,3,5-7): "))
+         ;; Build the command
+         (cmd (format "qpdf --empty --pages %s %s -- %s"
+                      (shell-quote-argument input-file)
+                      page-range
+                      (shell-quote-argument output-file))))
+    ;; Execute the command
+    (message "Executing: %s" cmd)
+    (let ((result (shell-command-to-string cmd)))
+      (if (= 0 (call-process-shell-command cmd))
+          (progn
+            (message "Successfully extracted pages %s from %s to %s"
+                     page-range
+                     (file-name-nondirectory input-file)
+                     (file-name-nondirectory output-file))
+            ;; Optionally open the output file
+            (when (yes-or-no-p "Open the extracted PDF? ")
+              (find-file output-file)))
+        (error "Failed to extract pages: %s" result)))))
+
+(defun mh/extract-pdf-pages-to-tmp ()
+  "Extract a range of pages from a PDF file using qpdf.
+Writes output file to /tmp/tmp.pdf.  Prompts for page range.  Adapted
+from function written by Claude AI."
+  (interactive)
+  (let* ((input-file (when (buffer-file-name)
+                       (expand-file-name (buffer-file-name))))
+         ;; Prompt for output file
+         (output-file "/tmp/tmp.pdf")
+         ;; Prompt for page range
+         (page-range (read-string "Page range (e.g., 1-5 or 1,3,5-7): "))
+         ;; Build the command
+         (cmd (format "qpdf --empty --pages %s %s -- %s"
+                      (shell-quote-argument input-file)
+                      page-range
+                      (shell-quote-argument output-file))))
+    ;; Execute the command
+    (message "Executing: %s" cmd)
+    (let ((result (shell-command-to-string cmd)))
+      (if (= 0 (call-process-shell-command cmd))
+          (progn
+            (message "Successfully extracted pages %s from %s to %s"
+                     page-range
+                     (file-name-nondirectory input-file)
+                     (file-name-nondirectory output-file)))
+        (error "Failed to extract pages: %s" result)))))
+
+;;-- Functions that collectively split PDF by chapters.
+
+(defun pdf-split--sanitize-filename (name)
+  "Turn NAME into a filesystem-safe string."
+  (let* ((s (replace-regexp-in-string "[/:*?\"<>|\\\\]" "_" name))
+         (s (replace-regexp-in-string "\\`[. ]+" "" s))
+         (s (replace-regexp-in-string "[. ]+\\'" "" s))
+         (s (string-trim s))
+         (s (replace-regexp-in-string "  +" " " s))
+         (s (replace-regexp-in-string " " "_" s))
+         (s (replace-regexp-in-string "__+" "_" s)))
+    (if (string-empty-p s) "untitled" (substring s 0 (min (length s) 120)))))
+
+(defun pdf-split--extract-outlines (json-data max-level)
+  "Return outlines from qpdf JSON-DATA up to MAX-LEVEL depth.
+MAX-LEVEL 0 means all levels, 1 means top-level only, etc.
+Each element is (TITLE . PAGE-NUMBER) with 1-indexed pages,
+sorted by page number.
+
+Tries the top-level `outlines' tree first (which preserves
+hierarchy).  Falls back to the flat per-page outline lists
+when the top-level key is absent (all outlines treated as
+level 1)."
+  (let ((top-outlines (alist-get 'outlines json-data)))
+    (if top-outlines
+        ;; ---- hierarchical tree from top-level outlines ----
+        (let (result)
+          (cl-labels
+              ((walk (entries depth)
+                     (cl-loop
+                      for e across entries
+                      for title = (alist-get 'title e)
+                      for page  = (or (alist-get 'destpageposfrom1 e)
+                                      (let ((dp (alist-get 'destpage e)))
+                                        (and (numberp dp) (1+ dp))))
+                      do (when (and title page
+                                    (or (zerop max-level)
+                                        (<= depth max-level)))
+                           (push (cons title page) result))
+                      do (let ((kids (alist-get 'kids e)))
+                           (when (and kids (> (length kids) 0)
+                                      (or (zerop max-level)
+                                          (< depth max-level)))
+                             (walk kids (1+ depth)))))))
+            (walk (if (vectorp top-outlines) top-outlines
+                    (vconcat top-outlines))
+                  1))
+          (sort (nreverse result)
+                (lambda (a b) (< (cdr a) (cdr b)))))
+      ;; ---- fallback: flat per-page outlines (no hierarchy) ----
+      (let ((pages (append (alist-get 'pages json-data) nil)))
+        (sort
+         (cl-loop for pg in pages
+                  for pagepos = (alist-get 'pageposfrom1 pg)
+                  nconc (cl-loop for o across (alist-get 'outlines pg)
+                                 for title = (alist-get 'title o)
+                                 when title
+                                 collect (cons title pagepos)))
+         (lambda (a b) (< (cdr a) (cdr b))))))))
+
+(defun pdf-split--page-count (json-data)
+  "Return total number of pages from qpdf JSON-DATA."
+  (length (alist-get 'pages json-data)))
+
+;;;###autoload
+(defun mh/pdf-split-by-chapters (pdf-file output-dir &optional max-level)
+  "Split PDF-FILE into per-chapter files using its bookmark outline.
+
+Uses qpdf to read the document's outline (bookmarks) and writes one
+PDF per bookmark entry into OUTPUT-DIR.
+
+MAX-LEVEL controls how deep into the outline hierarchy to split:
+  0 = all levels (default)
+  1 = top-level bookmarks only
+  2 = top-level and one level of sub-bookmarks
+  ...and so on.
+
+When called interactively, prompts for PDF-FILE (defaulting to the
+current buffer's file), OUTPUT-DIR (creating it if it does not
+exist), and MAX-LEVEL (with a prefix argument, otherwise 1)."
+  (interactive
+   (let* ((default (buffer-file-name))
+          (file (read-file-name "PDF file: "
+                                (and default (file-name-directory default))
+                                default t
+                                (and default (file-name-nondirectory default))))
+          (dir (read-directory-name "Output directory: "
+                                    (file-name-directory file)))
+          (level (read-number "Max outline level (0 = all): " 1)))
+     (list file dir level)))
+
+  (setq max-level (or max-level 0))
+
+  ;; ---- pre-flight checks ----
+  (unless (executable-find "qpdf")
+    (error "`qpdf' is not installed or not on PATH"))
+  (setq pdf-file  (expand-file-name pdf-file)
+        output-dir (file-name-as-directory (expand-file-name output-dir)))
+  (unless (file-readable-p pdf-file)
+    (error "Cannot read %s" pdf-file))
+  (unless (file-directory-p output-dir)
+    (make-directory output-dir t)
+    (message "Created %s" output-dir))
+
+  ;; ---- read outline via qpdf --json ----
+  (message "Reading PDF structure with qpdf...")
+  (let* ((json-string
+          (with-output-to-string
+            (with-current-buffer standard-output
+              (let ((exit-code (call-process "qpdf" nil '(t nil) nil
+                                             "--json=1"
+                                             "--json-key=pages"
+                                             "--json-key=outlines"
+                                             pdf-file)))
+                (unless (memq exit-code '(0 3))
+                  (error "qpdf --json failed (exit %d); see output:\n%s"
+                         exit-code (buffer-string)))))))
+         (json-data
+          (condition-case err
+              (json-read-from-string json-string)
+            (error (error "Cannot parse qpdf JSON: %s"
+                          (error-message-string err)))))
+         (outlines    (pdf-split--extract-outlines json-data max-level))
+         (total-pages (pdf-split--page-count json-data))
+         (n           (length outlines)))
+
+    (when (zerop total-pages)
+      (error "qpdf reports 0 pages in %s" (file-name-nondirectory pdf-file)))
+    (unless outlines
+      (error "No bookmarks found in %s" (file-name-nondirectory pdf-file)))
+    (message "Found %d bookmark(s) (max-level %s), %d pages"
+             n (if (zerop max-level) "all" max-level) total-pages)
+
+    ;; ---- build (INDEX TITLE START END FILENAME) per chapter ----
+    (let* ((width (length (number-to-string n)))
+           (chapters
+            (cl-loop
+             for i from 0 below n
+             for (title . start) = (nth i outlines)
+             for end = (if (< i (1- n))
+                           (max start (1- (cdr (nth (1+ i) outlines))))
+                         total-pages)
+             for idx   = (1+ i)
+             for fname = (format (format "%%0%dd_%%s.pdf" width)
+                                 idx
+                                 (pdf-split--sanitize-filename title))
+             collect (list idx title start end fname)))
+           (successes 0)
+           (failures  0))
+
+      ;; ---- extract each chapter ----
+      (dolist (ch chapters)
+        (cl-destructuring-bind (idx title start end fname) ch
+          (let* ((out-path   (expand-file-name fname output-dir))
+                 (page-range (if (= start end)
+                                 (number-to-string start)
+                               (format "%d-%d" start end)))
+                 (exit-code
+                  (call-process "qpdf" nil "*qpdf-split-log*" nil
+                                "--empty"
+                                "--pages" pdf-file page-range "--"
+                                out-path)))
+            (if (memq exit-code '(0 3))
+                (progn (cl-incf successes)
+                       (message "[%d/%d] %s" idx n title))
+              (cl-incf failures)
+              (message "[%d/%d] FAILED: %s" idx n title)))))
+
+      ;; ---- results buffer ----
+      (let ((buf (get-buffer-create "*PDF Split Results*")))
+        (with-current-buffer buf
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert (propertize "PDF Split by Chapters\n" 'face 'bold)
+                    (make-string 50 ?─) "\n\n"
+                    (format "Source:    %s\n" pdf-file)
+                    (format "Output:    %s\n" output-dir)
+                    (format "Pages:     %d\n" total-pages)
+                    (format "Bookmarks: %d\n" n)
+                    (format "Max level: %s\n\n"
+                            (if (zerop max-level) "all" max-level)))
+            (insert (propertize
+                     (format "  %3s  %-52s  %10s  %s\n"
+                             "#" "Title" "Pages" "File")
+                     'face 'bold))
+            (insert "  " (make-string 100 ?·) "\n")
+            (dolist (ch chapters)
+              (cl-destructuring-bind (idx title start end fname) ch
+                (let ((range (if (= start end)
+                                 (format "%d" start)
+                               (format "%d-%d" start end)))
+                      (npg   (1+ (- end start))))
+                  (insert (format "  %3d  %-52s  %4s (%2dp)  %s\n"
+                                  idx
+                                  (truncate-string-to-width title 52 nil nil t)
+                                  range npg fname)))))
+            (insert "\n")
+            (if (zerop failures)
+                (insert (format "All %d chapters extracted successfully.\n" successes))
+              (insert (format "%d/%d succeeded, " successes n))
+              (insert (propertize
+                       (format "%d failed" failures)
+                       'face 'error))
+              (insert " — see *qpdf-split-log* for details.\n")))
+          (goto-char (point-min))
+          (special-mode))
+        (display-buffer buf))
+      (message "Done — %d chapter(s) extracted to %s" successes output-dir))))
+
 (provide 'c-pdf-tools)
 
 ;;; c-pdf-tools.el ends here

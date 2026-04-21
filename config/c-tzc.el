@@ -10,7 +10,10 @@
                             :repo "md-arif-shaikh/tzc")))
 
 (custom-set-variables
- '(tzc-main-dir "/etc/zoneinfo/"))
+ `(tzc-main-dir (if (file-exists-p "/etc/zoneinfo/")
+                    "/etc/zoneinfo/"
+                  ;; Ubuntu location
+                  "/usr/share/zoneinfo/")))
 
 (require 'tzc)
 

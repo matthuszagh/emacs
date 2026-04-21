@@ -126,8 +126,30 @@
 ;; set.
 (setq outline-minor-mode t)
 
-;; don't truncate message log buffer
-(setq message-log-max t)
+(custom-set-variables
+ ;; don't truncate message log buffer
+ '(message-log-max t))
+
+(defconst mh-message-timestamp-format "[%Y-%m-%d %H:%M:%S:%N]")
+
+;; Display timestamps in the *Messages* and *Warnings* buffers.
+(defun mh/message-with-timestamp (orig-func fmt &rest args)
+  "Prepend a timestamp to messages in *Messages*."
+  (let ((ts (format-time-string mh-message-timestamp-format)))
+    (apply orig-func (concat ts " " fmt) args)))
+
+;; TODO Turn this off for now. I'd like it if it didn't display in the
+;; minibuffer.
+;; (advice-add 'message :around #'mh/message-with-timestamp)
+
+(defun mh/display-warning-with-timestamp (orig-func type message &rest args)
+  "Prepend a timestamp to warnings in the *Warnings* buffer."
+  (let ((ts (format-time-string mh-message-timestamp-format)))
+    (apply orig-func type (concat ts " " message) args)))
+
+;; TODO Turn this off for now. I'd like it if it didn't display in the
+;; minibuffer.
+;; (advice-add 'display-warning :around #'mh/display-warning-with-timestamp)
 
 ;; Newline at end of file.
 (setq require-final-newline t)
@@ -358,9 +380,12 @@ directory."
 `display-mm-width', `x-display-mm-width', etc. return values
 based on the number of pixels and DPI. So if the DPI is
 incorrect, these dimensions will be too."
-  (let* ((xrandr-output (shell-command-to-string "xrandr --query --verbose | grep 'connected primary'"))
+  (let* ((xrandr-output
+          (car (split-string
+                (shell-command-to-string "xrandr | grep -w 'connected'") "\n")))
          (rotation (substring
-                    (shell-command-to-string (concat "echo -n '" xrandr-output "' | " "cut -d ' ' -f 6"))
+                    (shell-command-to-string
+                     (concat "echo -n '" xrandr-output "' | " "cut -d ' ' -f 6"))
                     0 -1))
          (match-1-start (string-match "[0-9]+mm" xrandr-output))
          (match-1-end (match-end 0))
@@ -380,7 +405,9 @@ incorrect, these dimensions will be too."
 `display-pixel-width' and `display-pixel-width' appear to display
 the pixel dimensions of the screen rather than the display (see
 xrandr -q)."
-  (let* ((xrandr-output (shell-command-to-string "xrandr | grep 'connected primary'"))
+  (let* ((xrandr-output
+          (car (split-string
+                (shell-command-to-string "xrandr | grep -w 'connected'") "\n")))
          (match-1-start (string-match "[0-9]+x" xrandr-output))
          (match-1-end (match-end 0))
          (match-2-start (string-match "[0-9]+\\+" xrandr-output match-1-end))
@@ -433,6 +460,38 @@ the current buffer."
                                        "-r '" file ".zip'"
                                        " '" file "'")))
 
+(defun mh/toggle-dim-display ()
+  "Dim or brighten display."
+  (interactive)
+  (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
+      (progn
+        (start-process-shell-command
+         "ddcutil" "*ddcutil*"
+         (concat "ddcutil setvcp 10 10 --display 1 && "
+                 "ddcutil setvcp 10 10 --display 2 && "
+                 "ddcutil setvcp 10 10 --display 3"))
+        (start-process-shell-command
+         "ddcutil" "*ddcutil*"
+         (concat "ddcutil setvcp 10 75 --display 1 && "
+                 "ddcutil setvcp 10 100 --display 2 && "
+                 "ddcutil setvcp 10 100 --display 3"))
+        )
+    (message "mh/toggle-dim-display currently only supported on ryzen3950")))
+
+(defun mh/set-display-brightness (brightness)
+  "Set display brightness. TODO get this working with other hosts."
+  (interactive "nBrightness [0-1]: ")
+  (if (string= "ryzen3950\n" (shell-command-to-string "hostname"))
+      (let ((disp1 (round (* 75 brightness)))
+            (disp2 (round (* 100 brightness)))
+            (disp3 (round (* 100 brightness))))
+        (start-process-shell-command
+         "ddcutil" "*ddcutil*"
+         (concat "ddcutil setvcp 10 " (number-to-string disp1) " --display 1 && "
+                 "ddcutil setvcp 10 " (number-to-string disp2) " --display 2 && "
+                 "ddcutil setvcp 10 " (number-to-string disp3) " --display 3")))
+    (message "mh/set-display-brightness currently only supported on ryzen3950")))
+
 (defun mh//dump-vars-to-buffer (varlist buffer)
   "Dump variable value to a buffer. Taken from https://stackoverflow.com/a/2322164."
   (loop for var in varlist do
@@ -444,7 +503,7 @@ the current buffer."
 TODO it would probably be preferable if saving the buffer were
 asynchronous, since it incurs a slight delay for large variables."
   (save-excursion
-    (let ((buf (find-file-noselect filename)))
+    (let ((buf (find-file-noselect filename nil t)))
       (set-buffer buf)
       (erase-buffer)
       (mh//dump-vars-to-buffer vars buf)
@@ -464,6 +523,18 @@ asynchronous, since it incurs a slight delay for large variables."
     (goto-char (+ end 2))
     (insert "\\)")))
 
+(defun mh/surround-lr-paren (&optional beg end)
+  "Surround selected text or word at point in buffer with \\left(...\\right)."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let ((bounds (bounds-of-thing-at-point 'word)))
+       (list (car bounds) (cdr bounds)))))
+  (save-excursion
+    (goto-char beg)
+    (insert "\\left(")
+    (goto-char (+ end 6))
+    (insert "\\right)")))
 
 (defun mh/get-max-brightness ()
   "Return the maximum settable backlight brightness. TODO the actual limit is lower. How is this determined?"
@@ -496,61 +567,6 @@ asynchronous, since it incurs a slight delay for large variables."
     (shell-command-to-string (concat "light -S " (number-to-string new)))
     (message (concat "New brightness setting: " (number-to-string new) "/"
                      (number-to-string (mh/get-max-brightness))))))
-
-(defun mh/extract-pdf-pages ()
-  "Extract a range of pages from a PDF file using qpdf.
-Interactively prompts for input file, output file, and page
-range.  Function written by Claude AI."
-  (interactive)
-  (let* ((default-input (when (buffer-file-name)
-                          (expand-file-name (buffer-file-name))))
-         ;; Prompt for input file
-         (input-file
-          (if (fboundp 'helm-find-files)
-              (helm-read-file-name "Input PDF file: "
-                                   :initial-input default-input
-                                   :must-match t)
-            (read-file-name "Input PDF file: "
-                            nil default-input t
-                            default-input)))
-         ;; Verify input file exists and is a PDF
-         (_ (unless (file-exists-p input-file)
-              (error "Input file does not exist: %s" input-file)))
-         (_ (unless (string-match-p "\\.pdf\\'" (downcase input-file))
-              (when (not (yes-or-no-p "Input file doesn't have .pdf extension. Continue? "))
-                (error "Aborted"))))
-         ;; Prompt for output file
-         (output-file
-          (if (fboundp 'helm-find-files)
-              (helm-read-file-name "Output PDF file: "
-                                   :initial-input (concat (file-name-sans-extension input-file)
-                                                          "-extract.pdf")
-                                   :must-match nil)
-            (read-file-name "Output PDF file: "
-                            nil
-                            (concat (file-name-sans-extension input-file)
-                                    "-extract.pdf")
-                            nil)))
-         ;; Prompt for page range
-         (page-range (read-string "Page range (e.g., 1-5 or 1,3,5-7): "))
-         ;; Build the command
-         (cmd (format "qpdf --empty --pages %s %s -- %s"
-                      (shell-quote-argument input-file)
-                      page-range
-                      (shell-quote-argument output-file))))
-    ;; Execute the command
-    (message "Executing: %s" cmd)
-    (let ((result (shell-command-to-string cmd)))
-      (if (= 0 (call-process-shell-command cmd))
-          (progn
-            (message "Successfully extracted pages %s from %s to %s"
-                     page-range
-                     (file-name-nondirectory input-file)
-                     (file-name-nondirectory output-file))
-            ;; Optionally open the output file
-            (when (yes-or-no-p "Open the extracted PDF? ")
-              (find-file output-file)))
-        (error "Failed to extract pages: %s" result)))))
 
 (provide 'c-base)
 ;;; c-base.el ends here

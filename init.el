@@ -31,7 +31,6 @@
 
 (require 'c-autoinsert)
 (require 'c-aggressive-indent)
-(require 'c-all-the-icons)
 (require 'c-asy-mode)
 (require 'c-auctex)
 (require 'c-auctex-latexmk)
@@ -73,7 +72,7 @@
 (require 'c-framemove)
 (require 'c-gdb-mi)
 (require 'c-git-gutter)
-(require 'c-git-timemachine)
+;;(require 'c-git-timemachine)
 (require 'c-gnus)
 (require 'c-haskell-mode)
 (require 'c-helpful)
@@ -87,10 +86,19 @@
 (require 'c-langtool)
 (require 'c-switch-window)
 
-;; lsp
+;; Python
+(require 'c-python-docstring)
+(require 'c-python)
+;; (require 'c-elpy)
+
+;;-- lsp
 (require 'c-lsp-mode)
 (require 'c-lsp-ui)
-(require 'c-lsp-pyright)
+;; Python
+;; TODO being very buggy
+;; (require 'c-lsp-pyright)
+;; Verilog
+(require 'c-lsp-verilog)
 
 ;; magit
 (require 'c-transient)
@@ -130,6 +138,7 @@
 (require 'c-ob-spice)
 (require 'c-org-eldoc)
 (require 'c-ob-async)
+(require 'c-org-drill)
 
 (require 'c-bibtex)
 (require 'c-nov)
@@ -155,14 +164,21 @@
 
 (require 'c-ledger-mode)
 (require 'c-paren)
+
+;; perspective is causing some undesirable behavior. For one, it
+;; doesn't work across frames. This additionally means that a buffer
+;; in one frame is not available in another. Finally, it's causing
+;; serious lag when switching buffers, which is quite annoying.
 ;; (require 'c-perspective)
+;; persp-mode is like perspective, but works across
+;; frames. Unfortunately, I haven't yet been able to get it to work.
+;; (require 'c-persp-mode)
 (require 'c-pinentry)
 (require 'c-proced)
 (require 'c-prog-mode)
+(require 'c-ripgrep)
 (require 'c-projectile)
 (require 'c-pulseaudio-control)
-(require 'c-python-docstring)
-(require 'c-python)
 (require 'c-rainbow-delimiters)
 (require 'c-realgud)
 (require 'c-rmsbolt)
@@ -193,6 +209,7 @@
 ;;(require 'c-tree-sitter)
 (require 'c-indent-bars)
 (require 'c-csv-mode)
+(require 'c-claude-code)
 
 ;; completions
 (require 'c-company)
@@ -209,18 +226,15 @@
 (require 'c-auto-activating-snippets)
 ;; (require 'c-latex-auto-activating-snippets)
 
-(require 'c-elpy)
-
 (require 'c-gptel)
 
 ;; themes
-;; Only load naysayer if we're in a window manager. We use whether
-;; we're able to display images as a proxy for this. Obviously, that's
-;; a hack and not ideal, but it seems to work ok. In the console, the
-;; colors make many things completely illegible.
-(if (display-images-p)
-    (require 'c-naysayer-theme))
+(require 'c-all-the-icons)
+(require 'c-nerd-icons)
+(require 'c-naysayer-theme)
+(require 'c-modus-themes)
 ;; (require 'c-spaceline)
+(require 'c-doom-modeline)
 
 ;; keybindings
 (require 'c-evil)
@@ -231,8 +245,7 @@
 (require 'c-lispyville)
 (require 'c-general)
 ;; exwm
-(if (display-images-p)
-    (require 'c-exwm))
+(require 'c-exwm)
 
 ;; TODO find another location for these
 (defun mh/nix-rebuild ()

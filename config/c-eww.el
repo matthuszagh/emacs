@@ -15,7 +15,7 @@
  ;; use firefox as backup
  '(browse-url-secondary-browser-function 'browse-url-firefox)
  ;; use google as the search engine
- '(eww-search-prefix "https://google.com/search?q="))
+ '(eww-search-prefix "https://duckduckgo.com/html/?q="))
 
 (provide 'c-eww)
 ;;; c-eww.el ends here

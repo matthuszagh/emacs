@@ -30,6 +30,33 @@
       ;; scroll 8 lines other window using M-<next>/M-<prior>
       helm-scroll-amount 8
       helm-ff-file-name-history-use-recentf t)
+
+;; Suspend Helm while a recursive minibuffer is active (e.g. GPG
+;; passphrase prompt for authinfo.gpg during TRAMP connections).
+;; Without this, Helm's idle timer and post-command-hook functions
+;; steal focus from the password prompt.
+(defvar mh/helm--suspended-for-recursive-mb nil
+  "Non-nil when Helm was suspended due to a recursive minibuffer.")
+
+(defun mh/helm-suspend-for-recursive-minibuffer ()
+  "Suspend Helm when entering a recursive minibuffer."
+  (when (and (> (minibuffer-depth) 1)
+             (helm-alive-p))
+    (setq mh/helm--suspended-for-recursive-mb t)
+    (setq helm-suspend-update-flag t)
+    (remove-hook 'post-command-hook #'helm--maybe-update-keymap)
+    (remove-hook 'post-command-hook #'helm--update-header-line)))
+
+(defun mh/helm-resume-after-recursive-minibuffer ()
+  "Resume Helm when exiting a recursive minibuffer."
+  (when mh/helm--suspended-for-recursive-mb
+    (setq mh/helm--suspended-for-recursive-mb nil)
+    (setq helm-suspend-update-flag nil)
+    (add-hook 'post-command-hook #'helm--maybe-update-keymap)
+    (add-hook 'post-command-hook #'helm--update-header-line)))
+
+(add-hook 'minibuffer-setup-hook #'mh/helm-suspend-for-recursive-minibuffer)
+(add-hook 'minibuffer-exit-hook #'mh/helm-resume-after-recursive-minibuffer)
 (helm-mode 1)
 (setq-default helm-follow-mode-persistent t)
 

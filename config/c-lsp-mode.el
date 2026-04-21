@@ -14,14 +14,17 @@
 (add-hook 'TeX-mode-hook 'lsp)
 (setq lsp-completion-provider :capf)
 (add-to-list 'lsp-language-id-configuration '(cython-mode . "cython"))
-(setq lsp-log-io t)
-;; automatically guess project root with projectile
-(setq lsp-auto-guess-root t)
-(setq lsp-idle-delay 0.5)
+
+(custom-set-variables
+ '(lsp-log-io nil)
+ ;; automatically guess project root with projectile
+ '(lsp-auto-guess-root t)
+ '(lsp-idle-delay 0.5))
 
 ;; disable installation of absent servers
 (add-hook 'lsp-mode-hook
-          (lambda () (mapc (lambda (client) (setf (lsp-client-download-server-fn client) nil))
+          (lambda () (mapc (lambda (client)
+                             (setf (lsp-client-download-server-fn client) nil))
                            (ht-values lsp-clients))))
 
 ;; nix
