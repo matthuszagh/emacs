@@ -9,6 +9,29 @@
 
 (require 'helm)
 
+;; Upstream `helm-locate-lib-get-summary' (helm-lib.el) errors with
+;; "Args out of range" when a file's header looks like
+;; `;;; foo.el ---  -*- lexical-binding: t; -*-' (no description). It
+;; calls (split-string desc "-\\*-" nil "[ \t\n\r-]+"), and the TRIM
+;; regex's `-' character lets it greedily match into the separator's
+;; dashes, pushing this-start past this-end so substring fails.
+;; Override with a version that trims first, then splits without a
+;; dash-containing TRIM regex.
+(with-eval-after-load 'helm-lib
+  (defun helm-locate-lib-get-summary (file)
+    "Extract library description from FILE."
+    (with-temp-buffer
+      (let (desc)
+        (cl-letf (((symbol-function 'message) #'ignore))
+          (insert-file-contents file nil 0 128))
+        (goto-char (point-min))
+        (when (re-search-forward "^;;;?\\(.*\\) ---? \\(.*\\)" (pos-eol) t)
+          (setq desc (string-trim (match-string-no-properties 2))))
+        (if (or (null desc) (string= "" desc)
+                (string-match "\\`-\\*-" desc))
+            "Not documented"
+          (string-trim (car (split-string desc "-\\*-"))))))))
+
 (add-hook 'helm-minibuffer-setup-hook (lambda ()
                                         (setq-local fill-column nil)))
 (add-to-list 'helm-sources-using-default-as-input 'helm-source-man-pages)

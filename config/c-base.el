@@ -17,6 +17,18 @@
 ;; restrictive.
 (setq read-process-output-max (* 10 1024 1024)) ;; 10MB
 
+;; jka-compr hardcodes `jka-compr-dd-program' to "/bin/dd", which
+;; doesn't exist on NixOS. When something reads a byte range from a
+;; .gz file (e.g. `(insert-file-contents file nil 0 128)' as helm's
+;; `helm-locate-lib-get-summary' does), jka-compr pipes gzip through
+;; dd to slice out the range and the missing /bin/dd makes it fail
+;; with "error uncompressing FOO.el.gz".
+(with-eval-after-load 'jka-compr
+  (when (and (boundp 'jka-compr-dd-program)
+             (not (file-executable-p jka-compr-dd-program)))
+    (setq jka-compr-dd-program (or (executable-find "dd")
+                                   jka-compr-dd-program))))
+
 ;; Always start Emacs maximized.
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
