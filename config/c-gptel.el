@@ -41,7 +41,7 @@ currrently useful."
   (mh/insert-current-date)
   (insert ": ")
   (insert title)
-  (org-set-property "GPTEL_MODEL" "claude-opus-4-5-20251101")
+  (org-set-property "GPTEL_MODEL" "claude-opus-4-7")
   (org-set-property "GPTEL_BACKEND" "Claude-thinking")
   (org-set-property "GPTEL_SYSTEM" "Prioritize being explanatory, clear, and correct over being overly concise. When typesetting LaTeX math (and only in this case), use \"\\(\" and \"\\)\" as delimiters and only include valid characters (e.g., \\lambda, not λ). When typesetting currencies, use eg USD 500 or EUR 300 etc. (don't use a dollar sign). Define all variables and symbols. Use \\ket{}, \\bra{}, and \\braket{}{} instead of combinations of '|', '\\rangle', and '\\langle'.")
   (org-id-get-create)
