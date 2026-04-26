@@ -324,17 +324,6 @@
          (scale-factor 1.14))
     (* scale-factor (/ emacs-font-decipt latex-font-decipt))))
 
-;; `org--get-display-dpi' returns the incorrect DPI e.g., on remote
-;; displays. This isn't currently used in anything - I've setup latex
-;; inline image generation to ignore DPI (I compute use that
-;; elsewhere), but still a good idea to fix the DPI value.
-(defun mh//org--get-display-dpi ()
-  "Overlay of `org--get-display-dpi'."
-  ;; Get the y-component of DPI since this is what org uses when
-  ;; calculating latex inline image sizes.
-  (cadr (mh/dpi)))
-(advice-add 'org--get-display-dpi :override #'mh//org--get-display-dpi)
-
 (defun mh/update-org-latex-fragments-in-buffer ()
   "Clear and redisplay all LaTeX fragments in the current buffer."
   (interactive)
