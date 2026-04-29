@@ -1,5 +1,5 @@
 {
-  description = "Emacs matching the build used in ~/src/nixos";
+  description = "Customized emacs build (matching the build used in ~/src/nixos)";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -18,23 +18,17 @@
           overlays = [ emacs-overlay.overlay ];
         };
 
-        commonOverrides = {
+        emacsBase = (pkgs.emacs-unstable-pgtk.override {
           srcRepo = true;
           withCsrc = true;
           withNativeCompilation = true;
           withTreeSitter = true;
-        };
-        commonAttrs = {
+        }).overrideAttrs (_: {
           CFLAGS = "-O3 -march=native -mtune=native -momit-leaf-frame-pointer";
           NIX_ENFORCE_NO_NATIVE = false;
-        };
+        });
 
-        emacsBase = (pkgs.emacs-unstable.override (commonOverrides // {
-          withGTK3 = true;
-          withX = true;
-        })).overrideAttrs (_: commonAttrs);
-
-        emacsEnv = (pkgs.emacsPackagesFor emacsBase).emacsWithPackages (epkgs:
+        emacs = (pkgs.emacsPackagesFor emacsBase).emacsWithPackages (epkgs:
           (with epkgs.melpaPackages; [
             vterm
             pdf-tools
@@ -44,13 +38,13 @@
       in
       {
         packages = {
-          default = emacsEnv;
-          emacs = emacsEnv;
+          default = emacs;
+          inherit emacs;
         };
 
         apps.default = {
           type = "app";
-          program = "${emacsEnv}/bin/emacs";
+          program = "${emacs}/bin/emacs";
         };
       });
 }
