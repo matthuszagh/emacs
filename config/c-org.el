@@ -874,5 +874,12 @@ Written by Claude Opus
     ;; Trim whitespace
     (string-trim text)))
 
+(define-advice org-latex-preview (:around (orig &rest args) mh/skip-on-tramp)
+  "Don't render latex previews for remote buffers — latex would run
+  on the remote host but the .tex file is generated locally."
+  (if (file-remote-p default-directory)
+      (message "Skipping org-latex-preview for remote buffer")
+    (apply orig args)))
+
 (provide 'c-org)
 ;;; c-org.el ends here
