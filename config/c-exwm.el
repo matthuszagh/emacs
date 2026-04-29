@@ -143,6 +143,18 @@
 (add-hook 'exwm-randr-screen-change-hook 'exwm-change-screen-hook)
 ;; (add-hook 'exwm-randr-screen-change-hook 'exwm-randr-refresh)
 
+(add-hook 'exwm-init-hook
+          (lambda ()
+            ;; Daemon started before X, so its process-environment has no
+            ;; DISPLAY/XAUTHORITY. Emacsclient handed those to us as
+            ;; frame-local environment when the X session opened the
+            ;; first frame; copy them into the daemon's global env so
+            ;; subprocesses (vterm shells, make-process callers, etc.)
+            ;; inherit them.
+            (dolist (var '("DISPLAY" "XAUTHORITY"))
+              (when-let ((val (getenv var (selected-frame))))
+                (setenv var val)))))
+
 (exwm-randr-mode 1)
 
 ;; stop exwm from catching SPC leader key.
