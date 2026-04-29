@@ -8,7 +8,14 @@
 
 (defun latex-preamble-by-backend (params)
   "Set the latex source block preamble."
-  (concat "\\documentclass"
+  (concat
+   ;; Tell `org-latex-compile' which engine to use for this snippet.
+   ;; Defaults to pdflatex (fast startup); opt in to lualatex per
+   ;; block with `:engine lualatex' when fp math / large memory /
+   ;; pgfplots-heavy blocks need it.
+   (format "%% LATEX_COMPILER: %s\n"
+           (or (cdr (assoc :engine params)) "pdflatex"))
+   "\\documentclass"
           (let ((width (cdr (assoc :_width params))))
             (if width
                 (concat "[width="
@@ -79,7 +86,11 @@
    ;; 'none'. This produces undesirable results in cases where the
    ;; background color must be overlayed onto graphical elements in a
    ;; background layer (e.g., the legend of a tikz plot).
-   ,(concat "inkscape --pdf-poppler %f "
+   ;;
+   ;; DISPLAY is unset so inkscape runs headless. Inkscape 1.4.x
+   ;; otherwise opens an X11/GApplication connection and hangs ~25s
+   ;; at exit on this host before returning the SVG.
+   ,(concat "DISPLAY= inkscape --pdf-poppler %f "
             "--export-text-to-path "
             "--export-plain-svg "
             "--export-filename=%O"
@@ -172,12 +183,28 @@
         (:wrap . (lambda ()
                    (mh//org-src-block-latex-wrap)))
         (:cache . "yes")
+        (:engine . "pdflatex")
         (:file . (lambda ()
                    (mh//org-src-block-latex-result-filename)))
         (:file-desc . (lambda ()
                         (mh//org-src-block-latex-file-description)))
         (:post . (lambda ()
                    (mh//org-src-block-latex-post)))))
+
+;; Run latex directly for babel SVG snippets — skip the latexmk wrapper
+;; so we don't inherit `~/.config/latexmk/latexmkrc' lualatex default.
+;; Engine comes from the `% LATEX_COMPILER:' line emitted by
+;; `latex-preamble-by-backend' (driven by the `:engine' header arg).
+;; Pass SNIPPET=t to `org-latex-compile' so it skips log-buffer
+;; compilation-mode, the post-compile `directory-files' scan, and
+;; warning collection — those add ~1s overhead per block on top of
+;; pdflatex's own ~0.25s runtime. Full-document export still uses the
+;; global `org-latex-pdf-process' (latexmk + lualatex).
+(defun mh//org-babel-latex-tex-to-pdf (_orig file)
+  (let ((org-latex-pdf-process
+         '("%L -interaction=nonstopmode -output-directory=%o %f")))
+    (org-latex-compile file t)))
+(advice-add 'org-babel-latex-tex-to-pdf :around #'mh//org-babel-latex-tex-to-pdf)
 
 (provide 'c-ob-latex)
 ;;; c-ob-latex.el ends here
