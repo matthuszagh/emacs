@@ -6,7 +6,7 @@
 
 (require 'vterm)
 
-(setq vterm-shell "/run/current-system/sw/bin/bash")
+(setq vterm-shell (or (executable-find "bash") "/bin/bash"))
 (setq vterm-toggle-fullscreen-p nil)
 ;; increase max number of scrollback lines. TODO this apparently
 ;; only works up to 1e5 and must be modified in source. That is a
